@@ -17,6 +17,11 @@ sturgeon <- inner_join(sturgeon, hubs, by = join_by(Hub==Hub))
 sturgeon <- sturgeon %>%
   mutate(Date = lubridate::date(Date.and.Time..UTC.))
 
+sturgeon_map <- sturgeon %>%
+  group_by(Hub, HubLatitude, HubLongitude) %>%
+  summarize(n()) %>%
+  rename(Count = `n()`)
+
 # Convert to sf object
 sturgeon_sf <- sf::st_as_sf(sturgeon, coords = c("HubLongitude", "HubLatitude"))
 
@@ -24,6 +29,8 @@ sturgeon_sf <- sf::st_as_sf(sturgeon, coords = c("HubLongitude", "HubLatitude"))
 receiver_sturgeon <- sturgeon_sf %>%
   group_by(Hub, geometry) %>%
   summarize(n())
+
+
 
 
 # Set automatic leaflet basemap
@@ -35,8 +42,6 @@ m2 <- m %>%
   addMarkers(data=receiver_sturgeon)
 
 m2
-
-
 
 # Summarize by individual sturgeon
 individual_sturgeon <- sturgeon_sf %>%
