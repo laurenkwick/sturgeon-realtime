@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<title>D3 interactive sturgeon map</title>
-		<script type="text/javascript" src="../d3.js"></script>
+		<script type="text/javascript" src="../../d3.js"></script>
 		<style>
 			/*Optional: Centers the map on the page*/
 			body { font-family: sans-serif; }
@@ -112,8 +112,8 @@
 					};
 
 					d3.queue()
-						.defer(d3.csv, "sturgeon_data.csv", hubConverter)
-						.defer(d3.csv, "sturgeon_details.csv", detailConverter)
+						.defer(d3.csv, "../../data/sturgeon_data.csv", hubConverter)
+						.defer(d3.csv, "../../data/sturgeon_details.csv", detailConverter)
 						.await(function(error, hubData, detailData) {
 
 							if (error) throw error;
@@ -125,7 +125,7 @@
 
 							// Draw the basemap image first
 							svg.append("image")
-								.attr("xlink:href", "staticBasemap_v2.png")
+								.attr("xlink:href", "../../data/sturgeonBasemap.png")
 								.attr("width", width)
 								.attr("height", height)
 								.on("click", function() {
