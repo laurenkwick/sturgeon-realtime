@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>D3 interactive sturgeon map</title>
+		<script type="text/javascript" src="../d3.js"></script>
+		<style>
+			/*Optional: Centers the map on the page*/
+			body { font-family: sans-serif; }
+			#map-container { 
+				width: 100%;
+				max-width: 1280px;
+				margin: 0 auto;
+				line-height: 0;
+			}
+			#tooltip {
+				position: absolute;
+				padding: 8px;
+				background: white;
+				border: 1px solid #ccc;
+				pointer-events: none; /* Crucial: clicks pass through to circles */
+				opacity: 0;
+				font-size: 12px;
+				box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+			}
+			circle:hover { fill: orange; cursor: pointer; }
+			.container {
+				display: flex;
+				width: 100%;
+			}
+			.sidebar {
+				position: sticky;
+				top: 0;
+				height: 100vh;
+				width: 300px;
+				min-width: 200px; /* Prevents sidebar from shrinking when window size changes */
+				background-color: #f8f8f8;
+				border-right: 1px solid #ddd;
+				z-index: 10;
+			}
+			.content {
+				flex: 1;
+				overflow-x: auto; /* Adds a scrollbar only to the map area if it's too wide */
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div class="container">
+			<div class="sidebar">
+			</div>
+
+			<main class="content">
+				<div id="map-container"></div>
+				<div id="tooltip"></div>
+			</main>
+		</div>
+				<script type="text/javascript">
+
+					// Setup dimensions (Match the PNG aspect ratio)
+					const width = 1280;
+					const height = 810;
+
+					// Define the geogrpahic bounds of the PNG (decimal degrees)
+					const imageBounds = [
+						[-77.5994421, 37.6184908], // [Long, Lat] of top-left
+						[-76.5776466, 37.1045584] // [Long, Lat] of bottom-right
+					];
+
+					// Initialize the SVG and Projection
+					const svg = d3.select("#map-container")
+						.append("svg")
+						.attr("viewBox", `0 0 ${width} ${height}`)
+						.attr("width", "100%")
+						.attr("height", "auto");
+
+					const projection = d3.geoMercator()
+						.fitExtent([[0, 0], [width, height]], {
+							type: "MultiPoint",
+							coordinates: imageBounds
+						});
+
+					// Create a scale for circle size
+					const radiusScale = d3.scaleSqrt().range([5,30]);
+
+					// Initialize tooltip
+					var tooltip = d3.select("#tooltip");
+
+					// Load the CSV
+
+					var hubConverter = function(d) {
+						return {
+							Hub: d.Hub,
+							Count: parseFloat(d.Count),
+							HubLatitude: parseFloat(d.HubLatitude),
+							HubLongitude: parseFloat(d.HubLongitude)
+						};
+					};
+
+					var detailConverter = function(d) {
+						return {
+							Hub: d.Hub,
+							ID: d.ID,
+							Length: parseFloat(d["Animal.Length..m."]),
+							Sex: d["Animal.Sex"],
+							Date: d["Date"],
+							DateTime: d["Date.Time"]
+						};
+					};
+
+					d3.queue()
+						.defer(d3.csv, "sturgeon_data.csv", hubConverter)
+						.defer(d3.csv, "sturgeon_details.csv", detailConverter)
+						.await(function(error, hubData, detailData) {
+
+							if (error) throw error;
+
+							radiusScale.domain([0, d3.max(hubData, d => d.Count)]);
+							sexColorScale = d3.scaleOrdinal()
+								.domain(["Male", "Female", "Unknown"])
+								.range(["#00d4ff", "#ff00dd", "#cccccc"]);
+
+							// Draw the basemap image first
+							svg.append("image")
+								.attr("xlink:href", "staticBasemap_v2.png")
+								.attr("width", width)
+								.attr("height", height)
+								.on("click", function() {
+									// Reset everything when clicking the background
+									circles.transition().duration(500)
+										.attr("r", d => radiusScale(d.Count))
+										.style("opacity", 1);
+									svg.selectAll(".sturgeon-detail").remove()
+									svg.selectAll(".ping-traveler").remove();
+								});
+
+							function singleAnimation(d) {
+								// Grabbing start date and end date from the detailData set to set timelapse parameters
+								// Weeks start at 4am
+								// https://stackoverflow.com/questions/5619202/parsing-a-string-to-a-date-in-javascript
+								const dateCol = detailData.map(function(item){return item.Date}).sort() // Extract date column from detailData and sort
+
+								const startDateParts = (dateCol[0]).split("-"); // Get first day from detailsData
+								const startDate = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "04", "00", "00"); // Convert to date object
+								const startDateAxis = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "00", "00", "00"); // Adding a buffer for formatting the time axis
+
+								const endDateParts = (dateCol.at(-1)).split("-"); // Get last day from detailsData 
+								const endDate = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "3", "59", "59"); // Convert to date object 
+								const endDateAxis = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "12", "59", "59"); // Adding a buffer for formatting the time axis
+
+								const start = startDate.getTime(); // convert from date to milliseconds
+								const end = endDate.getTime() + 1000; // convert from date to milliseconds
+								const times = 168 // number of 60 minute intervals in a week
+								const arrayIncrement = []; // initialize
+
+
+								for (let i = 0; i < times; ++i) {
+									const u = i * 3600000; // number of milliseconds in an hour
+									const v = new Date(start + u);
+									const dict = {
+										DateTime: v,
+										HubLatitude: null,
+										HubLongitude: null
+									}
+									arrayIncrement.push(dict); // Create an array of dictionaries so we can join them on DateTime
+								}
+
+								const timelapseData = detailData.filter(obs => obs.ID === d.ID);
+
+								const timelapseWithCoords = timelapseData.map(function(e) {
+									const hub = hubData.find(h => h.Hub === e.Hub) || {};
+									e.DateTime = new Date(e.DateTime); // update from string to DateTime 
+									return { ...e, ...hub };
+								}).sort((a, b) => new Date(a.Date) - new Date(b.date));
+
+								// Change loop condition to length - 1 so i + 1 exists
+								for (let i = 0; i < arrayIncrement.length; ++i) {
+								    const startTime = arrayIncrement[i].DateTime.getTime();
+								    
+								    var endTime = null
+								    if (i == (arrayIncrement.length - 1)) {
+								    	endTime = arrayIncrement[i].DateTime.getTime() + 3600000;
+								    } else {
+								    	endTime = arrayIncrement[i + 1].DateTime.getTime();
+								    }
+
+								    const pingMatches = timelapseWithCoords.filter(({ DateTime }) => {
+								        const timeValue = DateTime.getTime();
+								        // Check if the time falls strictly within the window
+								        return timeValue >= startTime && timeValue < endTime;
+								    });
+
+								    if (pingMatches.length > 0) {
+								    	arrayIncrement[i].HubLatitude = pingMatches[0].HubLatitude;
+								    	arrayIncrement[i].HubLongitude = pingMatches[0].HubLongitude;
+								    };
+								}
+
+								console.log(arrayIncrement)
+
+								svg.selectAll(".ping-traveler").remove(); // clean up old animations
+								svg.selectAll(".sturgeon-detail").remove(); // remove sturgeon-detail rings for a clean animation
+
+								const traveler = svg.append("circle")
+									.attr("class", "ping-traveler")
+									.attr("r", 5)
+									.style("fill", "red")
+									.attr("cx", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[0])
+									.attr("cy", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[1]);
+
+								// Chain the transitions
+								let transitionChain = traveler.transition().duration(250);
+
+								arrayIncrement.forEach((pos, index) => {
+									if (index === 0) return;
+
+									const hasCoords = pos.HubLongitude !== null && pos.HubLatitude != null;
+
+									if (hasCoords) {
+										const [nextX, nextY] = projection([pos.HubLongitude, pos.HubLatitude]);
+										const jitterX = nextX + (Math.random() * 4 -2);
+										const jitterY = nextY + (Math.random() * 4 -2);
+
+									transitionChain = transitionChain.transition()
+											.duration(250)
+											.style("opacity", 1)
+											.attr("cx", jitterX)
+											.attr("cy", jitterY);
+									} else {
+										transitionChain = transitionChain.transition()
+											.duration(250)
+											.style("opacity", 0);
+									}
+
+								});
+
+
+								// Set width and height variables for plotting the axes
+								const wStart = 800;
+								const wEnd = wStart + 500
+								const h = 800;
+								const padding = 40;
+
+								//Create scale functions
+								xScale = d3.scaleTime()
+											   .domain([
+													startDateAxis,
+													endDateAxis
+												])
+											   .range([wStart, wEnd - padding]);
+
+
+								//Define X axis
+								xAxis = d3.axisBottom()
+												  .scale(xScale)
+												  .ticks(d3.timeDay.every(1));
+
+								const timeCircle = svg.append("circle")
+									.attr("r", 5)
+									.attr("cy", 750)
+									.attr("cx", xScale(startDate)) 
+									.style("fill", "red");
+
+								timeCircle.transition()
+									.duration(10000)
+									.ease(d3.easeLinear)
+									.attr("cx", xScale(endDate));
+
+								//Create X axis
+					   			const timeBar = svg.append("g")
+					   				.attr("class", "axis")
+					   				.attr("transform", "translate(0," + (h - padding) + ")")
+					   				.call(xAxis);
+							}
+
+							/*
+							// Define functions
+							function singleAnimation(d) {
+
+								// Grabbing start date and end date from the detailData set to set timelapse parameters
+								// Weeks start at 4am
+								// https://stackoverflow.com/questions/5619202/parsing-a-string-to-a-date-in-javascript
+								const dateCol = detailData.map(function(item){return item.Date}).sort() // Extract date column from detailData and sort
+
+								const startDateParts = (dateCol[0]).split("-"); // Get first day from detailsData
+								const startDate = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "04", "00", "00"); // Convert to date object
+								const startDateAxis = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "00", "00", "00"); // Adding a buffer for formatting the time axis
+
+								const endDateParts = (dateCol.at(-1)).split("-"); // Get last day from detailsData 
+								const endDate = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "3", "59", "59"); // Convert to date object 
+								const endDateAxis = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "12", "59", "59"); // Adding a buffer for formatting the time axis
+
+								// Create vector of startDate to endDate, incrementing by 1 minute (10080 minutes per week)
+								const timeFrame = d3.timeMinute.range(startDate, endDate);
+
+								// Set width and height variables for plotting the axes
+								const wStart = 800;
+								const wEnd = wStart + 500
+								const h = 800;
+								const padding = 40;
+
+								//Create scale functions
+								xScale = d3.scaleTime()
+											   .domain([
+													startDateAxis,
+													endDateAxis
+												])
+											   .range([wStart, wEnd - padding]);
+
+
+								//Define X axis
+								xAxis = d3.axisBottom()
+												  .scale(xScale)
+												  .ticks(d3.timeDay.every(1));
+
+								const timeCircle = svg.append("circle")
+									.attr("r", 5)
+									.attr("cy", 750)
+									.attr("cx", xScale(startDate)) 
+									.style("fill", "red");
+
+								timeCircle.transition()
+									.duration(10000)
+									.ease(d3.easeLinear)
+									.attr("cx", xScale(endDate));
+
+								//Create X axis
+					   			const timeBar = svg.append("g")
+					   				.attr("class", "axis")
+					   				.attr("transform", "translate(0," + (h - padding) + ")")
+					   				.call(xAxis);
+								
+
+
+
+
+								const ID = d.ID;
+								const timelapseData = detailData.filter(obs => obs.ID === d.ID);
+
+								const timelapseWithCoords = timelapseData.map(function(e) {
+									return Object.assign({}, e, hubData.reduce(function(acc, val) {
+										if (val.Hub == e.Hub) {
+											return val
+										} else {
+											return acc
+										}
+									}, {}))
+								});
+
+								svg.selectAll(".sturgeon-detail").remove();
+
+								var pings = svg
+									.data(timelapseWithCoords)
+									.append("circle")
+									.attr("class", "node-deals")
+									.attr("r", 5)
+									.attr("cy", 50)
+									.attr("cx", 50)
+									.style("fill", "red");
+								/*
+								var pings = d3.select("#chart");
+								pings.append("circle")
+									.attr("class", "pings")
+									.selectAll("circle")
+									.data( timelapseWithCoords)
+									.enter()
+									.append("circle")
+									.attr("class", "ping-deals")
+									.attr("cx", function(d, i) {
+										// projection() returns [x,y]
+										const randX = (Math.random()*4) - 2;
+										return projection([d.HubLongitude, d.HubLatitude])[0] + randX;
+									})
+									.attr("cy", function(d, i) {
+										const randY = (Math.random()*4) - 2
+										return projection([d.HubLongitude, d.HubLatitude])[1] + randY;
+									})
+									.attr("r", 4);
+								
+								
+
+								var animation = pings.selectAll("circle.ping-deals")
+									.transition()
+									.duration(250);
+
+								for (let j = 0; j < timelapseWithCoords.length; j++) {
+									animation = animation.transition()
+										.duration(750)
+										.delay(750)
+										.attr("cx", function(d, i) {
+										// projection() returns [x,y]
+										const randX = (Math.random()*4) - 2;
+										return projection([d.HubLongitude, d.HubLatitude])[0] + randX;
+										})
+										.attr("cy", function(d, i) {
+											const randY = (Math.random()*4) - 2
+											return projection([d.HubLongitude, d.HubLatitude])[1] + randY;
+										})
+										.attr("r", 4);
+
+								} */
+
+								/*
+								var idPings = svg
+									.data(timelapseWithCoords)
+									.append("circle")
+									.attr("class", "node-deals")
+									.attr("r", 5)
+									.attr("cy", 50)
+									.attr("cx", 50)
+									.style("fill", "red");
+
+								idPings.transition()
+									.duration(10)
+									//.data(timelapseWithCoords)
+									.attr("cx", function(d, i) {
+										// projection() returns [x,y]
+										const randX = (Math.random()*4) - 2;
+										return projection([d.HubLongitude, d.HubLatitude])[0] + randX;
+									})
+									.attr("cy", function(d, i) {
+										const randY = (Math.random()*4) - 2
+										return projection([d.HubLongitude, d.HubLatitude])[1] + randY;
+									})
+									.attr("r", 4);
+
+										
+								var idPings = svg.selectAll(".pings")
+									.data(timelapseWithCoords)
+									.enter()
+									.append("circle")
+									.transition()
+									.duration(1000)
+									.attr("class", "hub")
+									.attr("cx", function(d, i) {
+										// projection() returns [x,y]
+										const randX = (Math.random()*4) - 2;
+										return projection([d.HubLongitude, d.HubLatitude])[0] + randX;
+									})
+									.attr("cy", function(d, i) {
+										const randY = (Math.random()*4) - 2
+										return projection([d.HubLongitude, d.HubLatitude])[1] + randY;
+									})
+									.attr("r", 4);
+								
+
+								console.log("hi");
+							} */
+
+							// Function to update the sidebar when an individual sturgeon is selected
+							function updateSidebar(detailID) {
+								const sidebar = d3.select(".sidebar");
+
+								sidebar.html(`
+									<div style="padding: 20px;">
+										<h2> Sturgeon Detail </h2>
+										<p><strong>ID:</strong> ${detailID.ID}</p>
+										<p><strong>Sex:</strong> ${detailID.Sex}</p>
+										<p><strong>Fork Length:</strong> ${detailID.Length}</p>
+										<button id="play-button" type="button">Play timelapse!</button>
+									</div>
+								`);
+
+								const button = d3.select("#play-button");
+
+								button.on("click", function() {
+									singleAnimation(detailID);
+								});
+
+
+							};
+
+							// Function to style circle when indivdual sturgeon is selected
+							function handleDetailClick(d, i, nodes) {
+								// 'd' is the detail data
+								d3.event.stopPropagation();
+
+								// Update Sidebar - calls function to add sturgeon details to sidebar
+								updateSidebar(d);
+
+								// Update fade all other sturgeon circles
+								d3.selectAll(".sturgeon-detail")
+									.transition().duration(500)
+									.style("opacity", 0.6)
+									.attr("r", 3);
+
+								// Increase size and opacity for selected sturgeon.
+								d3.select(nodes[i])
+									.raise()
+									.transition().duration(500)
+									.style("opacity", 1)
+									.attr("r", 8);
+							};
+							
+							// Draw Hubs
+							var circles = svg.selectAll(".hub")
+								.data(hubData)
+								.enter()
+								.append("circle")
+								.attr("class", "hub")
+								.attr("cx", function(d) {
+									// projection() retunrs [x,y]
+									return projection([d.HubLongitude, d.HubLatitude])[0];
+								})
+								.attr("cy", function(d) {
+									return projection([d.HubLongitude, d.HubLatitude])[1];
+								})
+								.attr("r", function(d) {
+									return radiusScale(d.Count);
+								})
+								.attr("fill", "rgba(255, 60, 0, 0.7)") // NYT Red-ish
+		                        .attr("stroke", "white")
+		                        .attr("stroke-width", 1)
+		                        .on("mouseover", function(d) {
+		                        	tooltip.style("opacity", 1)
+		                        		.html("<strong>" + d.Hub + "</strong><br/>Count: " + d.Count);
+		                        })
+		                        .on("mousemove", function(d) {
+		                        	tooltip.style("left", (d3.event.pageX + 15) + "px")
+		                        		.style("top", (d3.event.pageY - 28) + "px");
+		                        })
+		                        .on("mouseout", function() {
+		                        	tooltip.style("opacity", 0);
+		                        })
+		                        .on("click", function(d) {
+
+		                        	const clickedHubName = d.Hub;
+		                        	const hubX = projection([d.HubLongitude, d.HubLatitude])[0];
+		                        	const hubY = projection([d.HubLongitude, d.HubLatitude])[1];
+
+		                  			// Fade other hubs and details
+		                  			circles.transition().duration(500).style("opacity", 0.3);
+		                  			svg.selectAll(".sturgeon-detail").remove();
+
+		                  			// Filter details data
+		                  			const allObservations = detailData.filter(obs => obs.Hub === clickedHubName);
+		                  			const uniqueMap = new Map(allObservations.map(obs => [obs.ID, obs]));
+		                  			const matches = Array.from(uniqueMap.values());
+
+		                  			const segments = matches.length
+
+		                  			const burstGroup = svg.append("g").attr("class", "burst-layer");
+
+		                  			// Clear and previous detail points
+		                  			burstGroup.selectAll(".sturgeon-detail").remove();
+
+
+		                  			// Create the burst
+		                  			const detailCircles = burstGroup.selectAll(".sturgeon-detail")
+		                  				.data(matches)
+		                  				.enter()
+		                  				.append("circle")
+		                  				.attr("class", "sturgeon-detail")
+		                  				.attr("cx", hubX) // Start at Hub
+		                  				.attr("cy", hubY)
+		                  				.attr("r", 0)
+		                  				.attr("fill", d => sexColorScale(d.Sex))
+		                  				.attr("stroke", "black")
+		                  				.attr("stroke-width", 0.5)
+		                  				.on("mouseover", function(d) {
+		                        			tooltip.style("opacity", 1)
+		                        				.html("<strong>" + d.ID + "</strong><br/>Sex: " + d.Sex);
+		                       				})
+		                        		.on("mousemove", function(d) {
+		                        			tooltip.style("left", (d3.event.pageX + 15) + "px")
+		                        				.style("top", (d3.event.pageY - 28) + "px");
+		                        			})
+		                        		.on("mouseout", function() {
+		                        			tooltip.style("opacity", 0)
+		                        			})
+		                  				.on("click", handleDetailClick)
+		                  				.transition()
+		                  				.duration(800)
+		                  				.delay((d, i) => i * 30) 
+		                  				.attr("cx", function(d, i) {
+		                  					// Option 1: 1 ring
+		                  					/*const angle = (i / segments) * (2 * Math.PI);
+		                  					const radius = 50;
+		                  					return hubX + radius * Math.cos(angle);*/
+
+		                  					// Option 2: multiple rings
+		                  					const ringIndex = Math.floor(i/10);
+		                  					const posOnRing = i % 10;
+		                  					const radius = 30 + (ringIndex * 15);
+		                  					const angle = (posOnRing / 10) * (2 * Math.PI);
+		                  					return hubX + radius * Math.cos(angle);
+		                  				})
+		                  				.attr("cy", function(d, i) {
+		                  					// Option 1: 1 ring
+		                  					/*const angle = (i/segments) * (2 * Math.PI);
+		                  					const radius = 50;
+		                  					return hubY + radius * Math.sin(angle);*/
+
+		                  					// Option 2: multiple rings
+		                  					const ringIndex = Math.floor(i/10);
+		                  					const posOnRing = i % 10;
+		                  					const radius = 30 + (ringIndex * 15);
+		                  					const angle = (posOnRing / 10) * (2 * Math.PI);
+		                  					return hubY + radius * Math.sin(angle);
+		                  				})
+		                  				.attr("r", 4);
+
+						});
+
+					});
+
+				</script>
+	</body>
+</html>
