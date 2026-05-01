@@ -159,7 +159,7 @@
 
 
 								for (let i = 0; i < times; ++i) {
-									const u = i * 900000; // number of milliseconds in an hour
+									const u = i * 3600000; // number of milliseconds in an hour
 									const v = new Date(start + u);
 									const dict = {
 										DateTime: v,
@@ -183,7 +183,7 @@
 								    
 								    var endTime = null
 								    if (i == (arrayIncrement.length - 1)) {
-								    	endTime = arrayIncrement[i].DateTime.getTime() + 900000;
+								    	endTime = arrayIncrement[i].DateTime.getTime() + 3600000;
 								    } else {
 								    	endTime = arrayIncrement[i + 1].DateTime.getTime();
 								    }
@@ -214,7 +214,7 @@
 									.attr("cy", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[1]);
 
 								// Chain the transitions
-								let transitionChain = traveler.transition().duration(10);
+								let transitionChain = traveler.transition().duration(100);
 
 								arrayIncrement.forEach((pos, index) => {
 									if (index === 0) return;
@@ -227,13 +227,13 @@
 										const jitterY = nextY + (Math.random() * 4 -2);
 
 									transitionChain = transitionChain.transition()
-											.duration(10)
+											.duration(100)
 											.style("opacity", 1)
-											.attr("cx", jitterX)
-											.attr("cy", jitterY);
+											.attr("cx", nextX)
+											.attr("cy", nextY);
 									} else {
 										transitionChain = transitionChain.transition()
-											.duration(1000)
+											.duration(100)
 											.style("opacity", 0);
 									}
 
