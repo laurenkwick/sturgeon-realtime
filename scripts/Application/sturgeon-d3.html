@@ -134,7 +134,8 @@
 										.attr("r", d => radiusScale(d.Count))
 										.style("opacity", 1);
 									svg.selectAll(".sturgeon-detail").remove()
-									svg.selectAll(".ping-traveler").remove();
+									svg.selectAll(".ping-traveler").remove()
+									svg.selectAll(".time-circle").remove();
 								});
 
 							function singleAnimation(d) {
@@ -158,7 +159,7 @@
 
 
 								for (let i = 0; i < times; ++i) {
-									const u = i * 3600000; // number of milliseconds in an hour
+									const u = i * 900000; // number of milliseconds in an hour
 									const v = new Date(start + u);
 									const dict = {
 										DateTime: v,
@@ -182,7 +183,7 @@
 								    
 								    var endTime = null
 								    if (i == (arrayIncrement.length - 1)) {
-								    	endTime = arrayIncrement[i].DateTime.getTime() + 3600000;
+								    	endTime = arrayIncrement[i].DateTime.getTime() + 900000;
 								    } else {
 								    	endTime = arrayIncrement[i + 1].DateTime.getTime();
 								    }
@@ -203,6 +204,7 @@
 
 								svg.selectAll(".ping-traveler").remove(); // clean up old animations
 								svg.selectAll(".sturgeon-detail").remove(); // remove sturgeon-detail rings for a clean animation
+								svg.selectAll(".time-circle").remove();
 
 								const traveler = svg.append("circle")
 									.attr("class", "ping-traveler")
@@ -212,7 +214,7 @@
 									.attr("cy", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[1]);
 
 								// Chain the transitions
-								let transitionChain = traveler.transition().duration(250);
+								let transitionChain = traveler.transition().duration(10);
 
 								arrayIncrement.forEach((pos, index) => {
 									if (index === 0) return;
@@ -225,13 +227,13 @@
 										const jitterY = nextY + (Math.random() * 4 -2);
 
 									transitionChain = transitionChain.transition()
-											.duration(250)
+											.duration(10)
 											.style("opacity", 1)
 											.attr("cx", jitterX)
 											.attr("cy", jitterY);
 									} else {
 										transitionChain = transitionChain.transition()
-											.duration(250)
+											.duration(1000)
 											.style("opacity", 0);
 									}
 
@@ -259,6 +261,7 @@
 												  .ticks(d3.timeDay.every(1));
 
 								const timeCircle = svg.append("circle")
+									.attr("class", "time-circle")
 									.attr("r", 5)
 									.attr("cy", 750)
 									.attr("cx", xScale(startDate)) 
@@ -275,180 +278,6 @@
 					   				.attr("transform", "translate(0," + (h - padding) + ")")
 					   				.call(xAxis);
 							}
-
-							/*
-							// Define functions
-							function singleAnimation(d) {
-
-								// Grabbing start date and end date from the detailData set to set timelapse parameters
-								// Weeks start at 4am
-								// https://stackoverflow.com/questions/5619202/parsing-a-string-to-a-date-in-javascript
-								const dateCol = detailData.map(function(item){return item.Date}).sort() // Extract date column from detailData and sort
-
-								const startDateParts = (dateCol[0]).split("-"); // Get first day from detailsData
-								const startDate = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "04", "00", "00"); // Convert to date object
-								const startDateAxis = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "00", "00", "00"); // Adding a buffer for formatting the time axis
-
-								const endDateParts = (dateCol.at(-1)).split("-"); // Get last day from detailsData 
-								const endDate = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "3", "59", "59"); // Convert to date object 
-								const endDateAxis = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "12", "59", "59"); // Adding a buffer for formatting the time axis
-
-								// Create vector of startDate to endDate, incrementing by 1 minute (10080 minutes per week)
-								const timeFrame = d3.timeMinute.range(startDate, endDate);
-
-								// Set width and height variables for plotting the axes
-								const wStart = 800;
-								const wEnd = wStart + 500
-								const h = 800;
-								const padding = 40;
-
-								//Create scale functions
-								xScale = d3.scaleTime()
-											   .domain([
-													startDateAxis,
-													endDateAxis
-												])
-											   .range([wStart, wEnd - padding]);
-
-
-								//Define X axis
-								xAxis = d3.axisBottom()
-												  .scale(xScale)
-												  .ticks(d3.timeDay.every(1));
-
-								const timeCircle = svg.append("circle")
-									.attr("r", 5)
-									.attr("cy", 750)
-									.attr("cx", xScale(startDate)) 
-									.style("fill", "red");
-
-								timeCircle.transition()
-									.duration(10000)
-									.ease(d3.easeLinear)
-									.attr("cx", xScale(endDate));
-
-								//Create X axis
-					   			const timeBar = svg.append("g")
-					   				.attr("class", "axis")
-					   				.attr("transform", "translate(0," + (h - padding) + ")")
-					   				.call(xAxis);
-								
-
-
-
-
-								const ID = d.ID;
-								const timelapseData = detailData.filter(obs => obs.ID === d.ID);
-
-								const timelapseWithCoords = timelapseData.map(function(e) {
-									return Object.assign({}, e, hubData.reduce(function(acc, val) {
-										if (val.Hub == e.Hub) {
-											return val
-										} else {
-											return acc
-										}
-									}, {}))
-								});
-
-								svg.selectAll(".sturgeon-detail").remove();
-
-								var pings = svg
-									.data(timelapseWithCoords)
-									.append("circle")
-									.attr("class", "node-deals")
-									.attr("r", 5)
-									.attr("cy", 50)
-									.attr("cx", 50)
-									.style("fill", "red");
-								/*
-								var pings = d3.select("#chart");
-								pings.append("circle")
-									.attr("class", "pings")
-									.selectAll("circle")
-									.data( timelapseWithCoords)
-									.enter()
-									.append("circle")
-									.attr("class", "ping-deals")
-									.attr("cx", function(d, i) {
-										// projection() returns [x,y]
-										const randX = (Math.random()*4) - 2;
-										return projection([d.HubLongitude, d.HubLatitude])[0] + randX;
-									})
-									.attr("cy", function(d, i) {
-										const randY = (Math.random()*4) - 2
-										return projection([d.HubLongitude, d.HubLatitude])[1] + randY;
-									})
-									.attr("r", 4);
-								
-								
-
-								var animation = pings.selectAll("circle.ping-deals")
-									.transition()
-									.duration(250);
-
-								for (let j = 0; j < timelapseWithCoords.length; j++) {
-									animation = animation.transition()
-										.duration(750)
-										.delay(750)
-										.attr("cx", function(d, i) {
-										// projection() returns [x,y]
-										const randX = (Math.random()*4) - 2;
-										return projection([d.HubLongitude, d.HubLatitude])[0] + randX;
-										})
-										.attr("cy", function(d, i) {
-											const randY = (Math.random()*4) - 2
-											return projection([d.HubLongitude, d.HubLatitude])[1] + randY;
-										})
-										.attr("r", 4);
-
-								} */
-
-								/*
-								var idPings = svg
-									.data(timelapseWithCoords)
-									.append("circle")
-									.attr("class", "node-deals")
-									.attr("r", 5)
-									.attr("cy", 50)
-									.attr("cx", 50)
-									.style("fill", "red");
-
-								idPings.transition()
-									.duration(10)
-									//.data(timelapseWithCoords)
-									.attr("cx", function(d, i) {
-										// projection() returns [x,y]
-										const randX = (Math.random()*4) - 2;
-										return projection([d.HubLongitude, d.HubLatitude])[0] + randX;
-									})
-									.attr("cy", function(d, i) {
-										const randY = (Math.random()*4) - 2
-										return projection([d.HubLongitude, d.HubLatitude])[1] + randY;
-									})
-									.attr("r", 4);
-
-										
-								var idPings = svg.selectAll(".pings")
-									.data(timelapseWithCoords)
-									.enter()
-									.append("circle")
-									.transition()
-									.duration(1000)
-									.attr("class", "hub")
-									.attr("cx", function(d, i) {
-										// projection() returns [x,y]
-										const randX = (Math.random()*4) - 2;
-										return projection([d.HubLongitude, d.HubLatitude])[0] + randX;
-									})
-									.attr("cy", function(d, i) {
-										const randY = (Math.random()*4) - 2
-										return projection([d.HubLongitude, d.HubLatitude])[1] + randY;
-									})
-									.attr("r", 4);
-								
-
-								console.log("hi");
-							} */
 
 							// Function to update the sidebar when an individual sturgeon is selected
 							function updateSidebar(detailID) {
