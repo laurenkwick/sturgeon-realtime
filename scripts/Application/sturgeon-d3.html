@@ -164,7 +164,8 @@
 									const dict = {
 										DateTime: v,
 										HubLatitude: null,
-										HubLongitude: null
+										HubLongitude: null,
+										NumberPings: null
 									}
 									arrayIncrement.push(dict); // Create an array of dictionaries so we can join them on DateTime
 								}
@@ -197,6 +198,7 @@
 								    if (pingMatches.length > 0) {
 								    	arrayIncrement[i].HubLatitude = pingMatches[0].HubLatitude;
 								    	arrayIncrement[i].HubLongitude = pingMatches[0].HubLongitude;
+								    	arrayIncrement[i].NumberPings = pingMatches.length;
 								    };
 								}
 
@@ -210,11 +212,14 @@
 									.attr("class", "ping-traveler")
 									.attr("r", 5)
 									.style("fill", "red")
+									.style("fill-opacity", .3)
+									.style("stroke", "red")
+									.style("stroke-width", 3)
 									.attr("cx", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[0])
 									.attr("cy", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[1]);
 
 								// Chain the transitions
-								let transitionChain = traveler.transition().duration(100);
+								let transitionChain = traveler.transition().duration(250);
 
 								arrayIncrement.forEach((pos, index) => {
 									if (index === 0) return;
@@ -223,17 +228,17 @@
 
 									if (hasCoords) {
 										const [nextX, nextY] = projection([pos.HubLongitude, pos.HubLatitude]);
-										const jitterX = nextX + (Math.random() * 4 -2);
-										const jitterY = nextY + (Math.random() * 4 -2);
+										const pingCount = pos.NumberPings
 
 									transitionChain = transitionChain.transition()
-											.duration(100)
+											.duration(250)
 											.style("opacity", 1)
+											.attr("r", pingCount)
 											.attr("cx", nextX)
 											.attr("cy", nextY);
 									} else {
 										transitionChain = transitionChain.transition()
-											.duration(100)
+											.duration(250)
 											.style("opacity", 0);
 									}
 
