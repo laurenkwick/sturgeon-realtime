@@ -132,7 +132,8 @@
 									// Reset everything when clicking the background
 									circles.transition().duration(500)
 										.attr("r", d => radiusScale(d.Count))
-										.style("opacity", 1);
+										.style("opacity", 0.7);
+									//svg.selectAll(".hub").remove();
 									svg.selectAll(".sturgeon-detail").remove()
 									svg.selectAll(".ping-traveler").remove()
 									svg.selectAll(".time-circle").remove();
@@ -159,7 +160,7 @@
 
 
 								for (let i = 0; i < times; ++i) {
-									const u = i * 3600000; // number of milliseconds in an hour
+									const u = i * 14400000; // number of milliseconds per 4 hours
 									const v = new Date(start + u);
 									const dict = {
 										DateTime: v,
@@ -184,7 +185,7 @@
 								    
 								    var endTime = null
 								    if (i == (arrayIncrement.length - 1)) {
-								    	endTime = arrayIncrement[i].DateTime.getTime() + 3600000;
+								    	endTime = arrayIncrement[i].DateTime.getTime() + 14400000;
 								    } else {
 								    	endTime = arrayIncrement[i + 1].DateTime.getTime();
 								    }
@@ -206,11 +207,23 @@
 
 								svg.selectAll(".ping-traveler").remove(); // clean up old animations
 								svg.selectAll(".sturgeon-detail").remove(); // remove sturgeon-detail rings for a clean animation
-								svg.selectAll(".time-circle").remove();
+								svg.selectAll(".time-circle").remove(); // remove old slider
+								svg.selectAll(".hub").transition()
+									.duration(100)
+									.attr("r", 3)
+									.style("fill", "red"); // remove old hubs
 
+								// Chain the transitions
+								const fadeInDuration = 200; // How long (in milliseconds) should each hour last
+								const fadeOutDuration = 300;
+								const easingOnEnter = d3.easeLinear;
+								const easingOnExit = d3.easeLinear;
+
+								const animationPings = svg.append("g").attr("class", "animation-pings")
+								
 								const traveler = svg.append("circle")
 									.attr("class", "ping-traveler")
-									.attr("r", 5)
+									.attr("r", 10)
 									.style("fill", "red")
 									.style("fill-opacity", .3)
 									.style("stroke", "red")
@@ -218,8 +231,7 @@
 									.attr("cx", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[0])
 									.attr("cy", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[1]);
 
-								// Chain the transitions
-								let transitionChain = traveler.transition().duration(250);
+								let transitionChain = traveler.transition().duration(fadeInDuration);
 
 								arrayIncrement.forEach((pos, index) => {
 									if (index === 0) return;
@@ -231,19 +243,31 @@
 										const pingCount = pos.NumberPings
 
 									transitionChain = transitionChain.transition()
-											.duration(250)
+											.duration(100)
+											.ease(easingOnEnter)
 											.style("opacity", 1)
-											.attr("r", pingCount)
+											.attr("r", 2)
 											.attr("cx", nextX)
-											.attr("cy", nextY);
+											.attr("cy", nextY)
+											.transition()
+											.duration(fadeInDuration)
+											.ease(easingOnEnter)
+											.style("opacity", 1)
+											.attr("r", 10)
+											.attr("cx", nextX)
+											.attr("cy", nextY)
+											.transition()
+											.ease(easingOnEnter)
+											.duration(fadeOutDuration)
+											.style("opacity", 0);
 									} else {
 										transitionChain = transitionChain.transition()
-											.duration(250)
+											.duration(fadeInDuration)
 											.style("opacity", 0);
 									}
 
 								});
-
+								
 
 								// Set width and height variables for plotting the axes
 								const wStart = 800;
@@ -273,7 +297,7 @@
 									.style("fill", "red");
 
 								timeCircle.transition()
-									.duration(10000)
+									.duration((fadeInDuration + fadeOutDuration + 100) * 6 * 7 )
 									.ease(d3.easeLinear)
 									.attr("cx", xScale(endDate));
 
