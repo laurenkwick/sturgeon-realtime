@@ -45,6 +45,12 @@
 				justify-content: center;
 				align-items: center;
 			}
+			text {
+				font-family: 'Comic Sans MS', 'Papyrus', sans-serif;
+				font-size: 32px;
+				font-weight: bold;
+				fill: red;
+			}
 		</style>
 	</head>
 	<body>
@@ -132,9 +138,11 @@
 									// Reset everything when clicking the background
 									circles.transition().duration(500)
 										.attr("r", d => radiusScale(d.Count))
-										.style("opacity", 1);
+										.style("opacity", 0.7);
+									//svg.selectAll(".hub").remove();
 									svg.selectAll(".sturgeon-detail").remove()
 									svg.selectAll(".ping-traveler").remove()
+									svg.selectAll(".time-traveler").remove()
 									svg.selectAll(".time-circle").remove();
 								});
 
@@ -154,12 +162,14 @@
 
 								const start = startDate.getTime(); // convert from date to milliseconds
 								const end = endDate.getTime() + 1000; // convert from date to milliseconds
-								const times = 168 // number of 60 minute intervals in a week
+								const times = 49 // number of 240 minute intervals (4 hour intervals) in a week
 								const arrayIncrement = []; // initialize
+								//const timeInterval = 3600000 // milliseconds in 1 hour
+								const timeInterval=14400000 // milliseconds in 4 hours
 
 
 								for (let i = 0; i < times; ++i) {
-									const u = i * 3600000; // number of milliseconds in an hour
+									const u = i * timeInterval; // number of milliseconds per 4 hours
 									const v = new Date(start + u);
 									const dict = {
 										DateTime: v,
@@ -170,8 +180,10 @@
 									arrayIncrement.push(dict); // Create an array of dictionaries so we can join them on DateTime
 								}
 
+								// Filter dataset based on selected sturgeon ID
 								const timelapseData = detailData.filter(obs => obs.ID === d.ID);
 
+								// Join filtered data to hub data, so that each observation is associated with the Hub's lat/long data
 								const timelapseWithCoords = timelapseData.map(function(e) {
 									const hub = hubData.find(h => h.Hub === e.Hub) || {};
 									e.DateTime = new Date(e.DateTime); // update from string to DateTime 
@@ -180,37 +192,63 @@
 
 								// Change loop condition to length - 1 so i + 1 exists
 								for (let i = 0; i < arrayIncrement.length; ++i) {
-								    const startTime = arrayIncrement[i].DateTime.getTime();
+								    const startTime = arrayIncrement[i].DateTime.getTime(); // Grab a datatime
 								    
 								    var endTime = null
 								    if (i == (arrayIncrement.length - 1)) {
-								    	endTime = arrayIncrement[i].DateTime.getTime() + 3600000;
+								    	endTime = arrayIncrement[i].DateTime.getTime() + timeInterval; // If last date time in the array, manually calculate end time
 								    } else {
-								    	endTime = arrayIncrement[i + 1].DateTime.getTime();
+								    	endTime = arrayIncrement[i + 1].DateTime.getTime(); // Else, grab the next datetime in the index
 								    }
 
+									// Check if any of the times in the filtered dataset fall within the start and end time we've indexed
 								    const pingMatches = timelapseWithCoords.filter(({ DateTime }) => {
 								        const timeValue = DateTime.getTime();
 								        // Check if the time falls strictly within the window
 								        return timeValue >= startTime && timeValue < endTime;
 								    });
 
+									// If at least one ping was identified within this datetime interval, update the overall datetime array to contain the lat/long
+									// information for that timerange
 								    if (pingMatches.length > 0) {
 								    	arrayIncrement[i].HubLatitude = pingMatches[0].HubLatitude;
 								    	arrayIncrement[i].HubLongitude = pingMatches[0].HubLongitude;
-								    	arrayIncrement[i].NumberPings = pingMatches.length;
+								    	arrayIncrement[i].NumberPings = pingMatches.length; // This variable is not currently used in the animation, but shows number of pings within the given datetime.
 								    };
 								}
 
-								console.log(arrayIncrement)
-
+								// Prepare map for timelapse animation
 								svg.selectAll(".ping-traveler").remove(); // clean up old animations
+								svg.selectAll(".time-traveler").remove();
 								svg.selectAll(".sturgeon-detail").remove(); // remove sturgeon-detail rings for a clean animation
-								svg.selectAll(".time-circle").remove();
+								svg.selectAll(".time-circle").remove(); // remove old slider
+								svg.selectAll(".hub").transition()
+									.duration(100)
+									.attr("r", 3)
+									.style("fill", "red"); // remove old hubs
 
+								// Transition parameters
+								const fadeInDuration = 200; // How long (in milliseconds) should each hour last
+								const fadeOutDuration = 200;
+								const easingOnEnter = d3.easeLinear;
+								const easingOnExit = d3.easeLinear;
+
+								// Text time series
+								const textX = 500;
+								const textY = 300;
+
+								console.log(Date.parse(arrayIncrement[0].DateTime));
+								const textTime = svg.append("text")
+									.attr("class", "time-traveler")
+									.text(arrayIncrement[0].DateTime)
+									.attr("x", textX)
+									.attr("y", textY);
+								
+								// Initialize the traveler variables - setting starting style characteristics and first lat/long location. 
+								// It's possible this is null in the beginning, if a ping was not recognized at the start of our time series.
 								const traveler = svg.append("circle")
 									.attr("class", "ping-traveler")
-									.attr("r", 5)
+									.attr("r", 10)
 									.style("fill", "red")
 									.style("fill-opacity", .3)
 									.style("stroke", "red")
@@ -218,70 +256,68 @@
 									.attr("cx", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[0])
 									.attr("cy", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[1]);
 
-								// Chain the transitions
-								let transitionChain = traveler.transition().duration(250);
+								// Initialize the transitionChain variable - this will be written over in the following forEach loop, allowing
+								// a new animation to be dispalyed
+								let transitionChain = traveler.transition().duration(fadeInDuration);
+								let textTransition = textTime.transition().duration(fadeInDuration);
+
+								console.log(arrayIncrement);
 
 								arrayIncrement.forEach((pos, index) => {
+									// We've already initialized and animated the first index of our array, so skipping here
 									if (index === 0) return;
 
+									// We are looping through each element of our datetime array. We want to check if a datetime element contains
+									// a lat/long location. If so, we want to animate it.
 									const hasCoords = pos.HubLongitude !== null && pos.HubLatitude != null;
+									const printTime = pos.DateTime;
 
+									// If we found coordinates for the selected date time, we update the animation
 									if (hasCoords) {
 										const [nextX, nextY] = projection([pos.HubLongitude, pos.HubLatitude]);
-										const pingCount = pos.NumberPings
+										const pingCount = pos.NumberPings; // Not currently used, but we could animate size of ping based on number of pings in interval
 
-									transitionChain = transitionChain.transition()
-											.duration(250)
+										transitionChain = transitionChain.transition()
+											.duration(50)
+											.ease(easingOnEnter)
+											.style("opacity", 0) // Hide the traveler during the jump phase
+											.on("start", function() {
+												d3.select(this)
+													.attr("cx", nextX) // Teleport the circle so it doesn't slide accross screen
+													.attr("cy", nextY)
+													.attr("r", 2);  
+											})
+											// Handle the fade-in and grow effect
+											.transition()
+											.duration(fadeInDuration)
+											.ease(easingOnEnter)
 											.style("opacity", 1)
-											.attr("r", pingCount)
-											.attr("cx", nextX)
-											.attr("cy", nextY);
+											.attr("r", 10)
+											// Fade out effect
+											.transition()
+											.ease(easingOnEnter)
+											.duration(fadeOutDuration)
+											.style("opacity", 0);
+										
+										textTransition = textTransition.transition()
+											.text(printTime)
+											.duration(fadeInDuration + fadeOutDuration + 50)
+											.ease(easingOnEnter)
+											.style("opacity", 1);
+									
+									// If coordinates were not found for the selected datetime, we do not animate this datetime value.
 									} else {
 										transitionChain = transitionChain.transition()
-											.duration(250)
+											.duration(fadeInDuration + fadeOutDuration + 50)
 											.style("opacity", 0);
+										
+										textTransition = textTransition.transition()
+											.text(printTime)
+											.duration(fadeInDuration + fadeOutDuration + 50)
+											.ease(easingOnEnter)
+											.style("opacity", 1);
 									}
-
 								});
-
-
-								// Set width and height variables for plotting the axes
-								const wStart = 800;
-								const wEnd = wStart + 500
-								const h = 800;
-								const padding = 40;
-
-								//Create scale functions
-								xScale = d3.scaleTime()
-											   .domain([
-													startDateAxis,
-													endDateAxis
-												])
-											   .range([wStart, wEnd - padding]);
-
-
-								//Define X axis
-								xAxis = d3.axisBottom()
-												  .scale(xScale)
-												  .ticks(d3.timeDay.every(1));
-
-								const timeCircle = svg.append("circle")
-									.attr("class", "time-circle")
-									.attr("r", 5)
-									.attr("cy", 750)
-									.attr("cx", xScale(startDate)) 
-									.style("fill", "red");
-
-								timeCircle.transition()
-									.duration(10000)
-									.ease(d3.easeLinear)
-									.attr("cx", xScale(endDate));
-
-								//Create X axis
-					   			const timeBar = svg.append("g")
-					   				.attr("class", "axis")
-					   				.attr("transform", "translate(0," + (h - padding) + ")")
-					   				.call(xAxis);
 							}
 
 							// Function to update the sidebar when an individual sturgeon is selected
