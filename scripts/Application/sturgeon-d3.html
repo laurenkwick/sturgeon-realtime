@@ -45,6 +45,12 @@
 				justify-content: center;
 				align-items: center;
 			}
+			text {
+				font-family: 'Comic Sans MS', 'Papyrus', sans-serif;
+				font-size: 32px;
+				font-weight: bold;
+				fill: red;
+			}
 		</style>
 	</head>
 	<body>
@@ -136,6 +142,7 @@
 									//svg.selectAll(".hub").remove();
 									svg.selectAll(".sturgeon-detail").remove()
 									svg.selectAll(".ping-traveler").remove()
+									svg.selectAll(".time-traveler").remove()
 									svg.selectAll(".time-circle").remove();
 								});
 
@@ -155,12 +162,14 @@
 
 								const start = startDate.getTime(); // convert from date to milliseconds
 								const end = endDate.getTime() + 1000; // convert from date to milliseconds
-								const times = 168 // number of 60 minute intervals in a week
+								const times = 49 // number of 240 minute intervals (4 hour intervals) in a week
 								const arrayIncrement = []; // initialize
+								//const timeInterval = 3600000 // milliseconds in 1 hour
+								const timeInterval=14400000 // milliseconds in 4 hours
 
 
 								for (let i = 0; i < times; ++i) {
-									const u = i * 14400000; // number of milliseconds per 4 hours
+									const u = i * timeInterval; // number of milliseconds per 4 hours
 									const v = new Date(start + u);
 									const dict = {
 										DateTime: v,
@@ -187,7 +196,7 @@
 								    
 								    var endTime = null
 								    if (i == (arrayIncrement.length - 1)) {
-								    	endTime = arrayIncrement[i].DateTime.getTime() + 14400000; // If last date time in the array, manually calculate end time
+								    	endTime = arrayIncrement[i].DateTime.getTime() + timeInterval; // If last date time in the array, manually calculate end time
 								    } else {
 								    	endTime = arrayIncrement[i + 1].DateTime.getTime(); // Else, grab the next datetime in the index
 								    }
@@ -210,6 +219,7 @@
 
 								// Prepare map for timelapse animation
 								svg.selectAll(".ping-traveler").remove(); // clean up old animations
+								svg.selectAll(".time-traveler").remove();
 								svg.selectAll(".sturgeon-detail").remove(); // remove sturgeon-detail rings for a clean animation
 								svg.selectAll(".time-circle").remove(); // remove old slider
 								svg.selectAll(".hub").transition()
@@ -219,15 +229,25 @@
 
 								// Transition parameters
 								const fadeInDuration = 200; // How long (in milliseconds) should each hour last
-								const fadeOutDuration = 300;
+								const fadeOutDuration = 200;
 								const easingOnEnter = d3.easeLinear;
 								const easingOnExit = d3.easeLinear;
+
+								// Text time series
+								const textX = 500;
+								const textY = 100;
+
+								const textTime = svg.append("text")
+									.attr("class", "time-traveler")
+									.text(arrayIncrement[0].DateTime)
+									.attr("x", textX)
+									.attr("y", textY);
 								
 								// Initialize the traveler variables - setting starting style characteristics and first lat/long location. 
 								// It's possible this is null in the beginning, if a ping was not recognized at the start of our time series.
 								const traveler = svg.append("circle")
 									.attr("class", "ping-traveler")
-									.attr("r", 10)
+									.attr("r", 40)
 									.style("fill", "red")
 									.style("fill-opacity", .3)
 									.style("stroke", "red")
@@ -238,6 +258,9 @@
 								// Initialize the transitionChain variable - this will be written over in the following forEach loop, allowing
 								// a new animation to be dispalyed
 								let transitionChain = traveler.transition().duration(fadeInDuration);
+								let textTransition = textTime.transition().duration(fadeInDuration);
+
+								console.log(arrayIncrement);
 
 								arrayIncrement.forEach((pos, index) => {
 									// We've already initialized and animated the first index of our array, so skipping here
@@ -246,14 +269,15 @@
 									// We are looping through each element of our datetime array. We want to check if a datetime element contains
 									// a lat/long location. If so, we want to animate it.
 									const hasCoords = pos.HubLongitude !== null && pos.HubLatitude != null;
+									const printTime = pos.DateTime;
 
 									// If we found coordinates for the selected date time, we update the animation
 									if (hasCoords) {
 										const [nextX, nextY] = projection([pos.HubLongitude, pos.HubLatitude]);
-										const pingCount = pos.NumberPings // Not currently used, but we could animate size of ping based on number of pings in interval
+										const pingCount = pos.NumberPings; // Not currently used, but we could animate size of ping based on number of pings in interval
 
 										transitionChain = transitionChain.transition()
-											.duration(100)
+											.duration(50)
 											.ease(easingOnEnter)
 											.style("opacity", 0) // Hide the traveler during the jump phase
 											.on("start", function() {
@@ -267,59 +291,32 @@
 											.duration(fadeInDuration)
 											.ease(easingOnEnter)
 											.style("opacity", 1)
-											.attr("r", 10)
+											.attr("r", 40)
 											// Fade out effect
 											.transition()
 											.ease(easingOnEnter)
 											.duration(fadeOutDuration)
 											.style("opacity", 0);
+										
+										textTransition = textTransition.transition()
+											.text(printTime)
+											.duration(fadeInDuration + fadeOutDuration + 50)
+											.ease(easingOnEnter)
+											.style("opacity", 1);
 									
 									// If coordinates were not found for the selected datetime, we do not animate this datetime value.
 									} else {
 										transitionChain = transitionChain.transition()
-											.duration(fadeInDuration)
+											.duration(fadeInDuration + fadeOutDuration + 50)
 											.style("opacity", 0);
+										
+										textTransition = textTransition.transition()
+											.text(printTime)
+											.duration(fadeInDuration + fadeOutDuration + 50)
+											.ease(easingOnEnter)
+											.style("opacity", 1);
 									}
 								});
-								
-
-								// Set width and height variables for plotting the axes
-								const wStart = 800;
-								const wEnd = wStart + 500
-								const h = 800;
-								const padding = 40;
-
-								//Create scale functions
-								xScale = d3.scaleTime()
-											   .domain([
-													startDateAxis,
-													endDateAxis
-												])
-											   .range([wStart, wEnd - padding]);
-
-
-								//Define X axis
-								xAxis = d3.axisBottom()
-												  .scale(xScale)
-												  .ticks(d3.timeDay.every(1));
-
-								const timeCircle = svg.append("circle")
-									.attr("class", "time-circle")
-									.attr("r", 5)
-									.attr("cy", 750)
-									.attr("cx", xScale(startDate)) 
-									.style("fill", "red");
-
-								timeCircle.transition()
-									.duration((fadeInDuration + fadeOutDuration + 100) * 6 * 7 )
-									.ease(d3.easeLinear)
-									.attr("cx", xScale(endDate));
-
-								//Create X axis
-					   			const timeBar = svg.append("g")
-					   				.attr("class", "axis")
-					   				.attr("transform", "translate(0," + (h - padding) + ")")
-					   				.call(xAxis);
 							}
 
 							// Function to update the sidebar when an individual sturgeon is selected
