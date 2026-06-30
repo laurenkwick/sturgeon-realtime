@@ -235,8 +235,9 @@
 
 								// Text time series
 								const textX = 500;
-								const textY = 100;
+								const textY = 300;
 
+								console.log(Date.parse(arrayIncrement[0].DateTime));
 								const textTime = svg.append("text")
 									.attr("class", "time-traveler")
 									.text(arrayIncrement[0].DateTime)
@@ -247,7 +248,7 @@
 								// It's possible this is null in the beginning, if a ping was not recognized at the start of our time series.
 								const traveler = svg.append("circle")
 									.attr("class", "ping-traveler")
-									.attr("r", 40)
+									.attr("r", 10)
 									.style("fill", "red")
 									.style("fill-opacity", .3)
 									.style("stroke", "red")
@@ -291,7 +292,7 @@
 											.duration(fadeInDuration)
 											.ease(easingOnEnter)
 											.style("opacity", 1)
-											.attr("r", 40)
+											.attr("r", 10)
 											// Fade out effect
 											.transition()
 											.ease(easingOnEnter)
