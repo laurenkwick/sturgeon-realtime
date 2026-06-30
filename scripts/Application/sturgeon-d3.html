@@ -237,10 +237,20 @@
 								const textX = 500;
 								const textY = 300;
 
-								console.log(Date.parse(arrayIncrement[0].DateTime));
+								// Date Formatting for Time Series
+								const monthList = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+								const firstTime = arrayIncrement[0].DateTime
+
+								const dayOfMonth = firstTime.getDate();
+								const month = monthList[firstTime.getMonth()];
+								const year = firstTime.getFullYear();
+								const hour = firstTime.getHours();
+								const dateString = month + " " + dayOfMonth + ", " + year + " " + hour + ":00";
+								
 								const textTime = svg.append("text")
 									.attr("class", "time-traveler")
-									.text(arrayIncrement[0].DateTime)
+									.text(dateString)
 									.attr("x", textX)
 									.attr("y", textY);
 								
@@ -261,8 +271,6 @@
 								let transitionChain = traveler.transition().duration(fadeInDuration);
 								let textTransition = textTime.transition().duration(fadeInDuration);
 
-								console.log(arrayIncrement);
-
 								arrayIncrement.forEach((pos, index) => {
 									// We've already initialized and animated the first index of our array, so skipping here
 									if (index === 0) return;
@@ -271,6 +279,12 @@
 									// a lat/long location. If so, we want to animate it.
 									const hasCoords = pos.HubLongitude !== null && pos.HubLatitude != null;
 									const printTime = pos.DateTime;
+
+									const dayOfMonth = printTime.getDate();
+									const month = monthList[printTime.getMonth()];
+									const year = printTime.getFullYear();
+									const hour = printTime.getHours();
+									const printDateString = month + " " + dayOfMonth + ", " + year + " " + hour + ":00";
 
 									// If we found coordinates for the selected date time, we update the animation
 									if (hasCoords) {
@@ -300,7 +314,7 @@
 											.style("opacity", 0);
 										
 										textTransition = textTransition.transition()
-											.text(printTime)
+											.text(printDateString)
 											.duration(fadeInDuration + fadeOutDuration + 50)
 											.ease(easingOnEnter)
 											.style("opacity", 1);
@@ -312,7 +326,7 @@
 											.style("opacity", 0);
 										
 										textTransition = textTransition.transition()
-											.text(printTime)
+											.text(printDateString)
 											.duration(fadeInDuration + fadeOutDuration + 50)
 											.ease(easingOnEnter)
 											.style("opacity", 1);
