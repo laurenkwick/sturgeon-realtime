@@ -6,12 +6,30 @@
 		<script type="text/javascript" src="../../d3.js"></script>
 		<style>
 			/*Optional: Centers the map on the page*/
-			body { font-family: sans-serif; }
-			#map-container { 
+			html, body { 
+				font-family: sans-serif; 
+				margin: 0;
+				padding: 0;
 				width: 100%;
-				max-width: 1280px;
-				margin: 0 auto;
-				line-height: 0;
+				height: 100%;
+				overflow: hidden;
+			}
+			#map-container { 
+				position: relative; /* so text-buttons anchor to the map bounds */
+				
+				width: min(100%, calc(100vh * (1280 / 810)));
+				height: min(100%, calc(100vw * (810 / 1280)));
+				aspect-ratio: 1280/810;
+
+				max-width: 100%;
+				max-height: 100%;
+
+				margin: auto;
+			}
+			#map-container svg {
+				width: 100%;
+				height: 100%;
+				display: block;
 			}
 			#tooltip {
 				position: absolute;
@@ -22,11 +40,13 @@
 				opacity: 0;
 				font-size: 12px;
 				box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+				z-index: 20;
 			}
 			circle:hover { fill: orange; cursor: pointer; }
 			.container {
 				display: flex;
-				width: 100%;
+				width: 100vw;
+				height: 100vh;
 			}
 			.sidebar {
 				position: sticky;
@@ -40,12 +60,18 @@
 			}
 			.content {
 				flex: 1;
-				overflow-x: auto; /* Adds a scrollbar only to the map area if it's too wide */
+				height: 100vh;
 				display: flex;
+				position: relative;
 				justify-content: center;
 				align-items: center;
+				overflow: hidden; /* prevents overflow inside the main view area */
 			}
 			.text-buttons {
+				position: absolute;
+				bottom: 20px;
+				left: 40px;
+				z-index: 5;
 			}
 				.text-button {
 					bottom:15px;
@@ -104,10 +130,12 @@
 			</div>
 
 			<main class="content">
-				<div id="map-container"></div>
-				<div id="tooltip"></div>
-				<div class="text-buttons">
-					<div class="text-button prev" data-idx="-1">Back</div><div class="text-button next" data-idx="1">Next</div>
+				<div id="map-container">
+					<div id="tooltip"></div>
+					<div class="text-buttons">
+						<div class="text-button prev" data-idx="-1">Back</div>
+						<div class="text-button next" data-idx="1">Next</div>
+					</div>
 				</div>
 			</main>
 		</div>
@@ -127,6 +155,7 @@
 					const svg = d3.select("#map-container")
 						.append("svg")
 						.attr("viewBox", `0 0 ${width} ${height}`)
+						.attr("preserveAspectRatio", "xMidYMid meet")
 						.attr("width", "100%")
 						.attr("height", "auto");
 
@@ -427,6 +456,7 @@
 							};
 							
 							// Draw Hubs
+							var mapNode = d3.select("#map-container").node();
 							var circles = svg.selectAll(".hub")
 								.data(hubData)
 								.enter()
@@ -450,8 +480,9 @@
 		                        		.html("<strong>" + d.Hub + "</strong><br/>Count: " + d.Count);
 		                        })
 		                        .on("mousemove", function(d) {
-		                        	tooltip.style("left", (d3.event.pageX + 15) + "px")
-		                        		.style("top", (d3.event.pageY - 28) + "px");
+									var mouse = d3.mouse ? d3.mouse(mapNode) : d3.pointer(d3.event || event, mapNode);
+		                        	tooltip.style("left", (mouse[0] + 15) + "px")
+		                        		.style("top", (mouse[1] - 28) + "px");
 		                        })
 		                        .on("mouseout", function() {
 		                        	tooltip.style("opacity", 0);
@@ -496,8 +527,9 @@
 		                        				.html("<strong>" + d.ID + "</strong><br/>Sex: " + d.Sex);
 		                       				})
 		                        		.on("mousemove", function(d) {
-		                        			tooltip.style("left", (d3.event.pageX + 15) + "px")
-		                        				.style("top", (d3.event.pageY - 28) + "px");
+											var mouse = d3.mouse ? d3.mouse(mapNode) : d3.pointer(d3.event || event, mapNode);
+		                        			tooltip.style("left", (mouse[0] + 15) + "px")
+		                        				.style("top", (mouse[1] - 28) + "px");
 		                        			})
 		                        		.on("mouseout", function() {
 		                        			tooltip.style("opacity", 0)
