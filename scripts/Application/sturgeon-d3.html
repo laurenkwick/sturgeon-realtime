@@ -45,11 +45,55 @@
 				justify-content: center;
 				align-items: center;
 			}
+			.text-buttons {
+			}
+				.text-button {
+					bottom:15px;
+					left: 15px;
+					margin-right: 15px;
+					font: 13px/13px Ariel;
+					padding: 6px 0px;
+					display: inline-block;
+					background: #fff;
+					text-align: center;
+					width: 60px;
+					transition: background 0.5s;
+					cursor: pointer;
+					border: 1px solid #666;
+					color: #666
+				}
+					.viewport-small-10 .text-button {
+						border: 1px solid #999;
+						color: #888;
+						font-size: 14px;
+						line-height: 14px;
+						width: 100px;
+						padding: 10px 0;
+					}
+					.text-button.next {
+						border-top-right-radius: 5px;
+						border-bottom-right-radius: 5px;
+					}
+					.text-button.prev {
+						border-top-left-radius: 5px;
+						border-bottom-left-radius: 5px;
+					}
+					.text-button:hover {
+						background: #f7f7f5;
+					}
+						.viewport-small-10 .text-button.next {
+							margin-left: 1px;
+						}
+						.text-0 .text-button.prev,
+						.a-text:last-child .text-button.next {
+							cursor: default;
+							opacity: 0.4;
+						}
 			text {
 				font-family: 'Comic Sans MS', 'Papyrus', sans-serif;
 				font-size: 32px;
 				font-weight: bold;
-				fill: red;
+				fill: #FFB300;
 			}
 		</style>
 	</head>
@@ -62,6 +106,9 @@
 			<main class="content">
 				<div id="map-container"></div>
 				<div id="tooltip"></div>
+				<div class="text-buttons">
+					<div class="text-button prev" data-idx="-1">Back</div><div class="text-button next" data-idx="1">Next</div>
+				</div>
 			</main>
 		</div>
 				<script type="text/javascript">
@@ -131,7 +178,7 @@
 
 							// Draw the basemap image first
 							svg.append("image")
-								.attr("xlink:href", "../../data/sturgeonBasemap.png")
+								.attr("xlink:href", "../../data/sturgeonBasemap2.png")
 								.attr("width", width)
 								.attr("height", height)
 								.on("click", function() {
@@ -225,7 +272,7 @@
 								svg.selectAll(".hub").transition()
 									.duration(100)
 									.attr("r", 3)
-									.style("fill", "red"); // remove old hubs
+									.style("fill", "#FFB300"); // remove old hubs
 
 								// Transition parameters
 								const fadeInDuration = 200; // How long (in milliseconds) should each hour last
@@ -259,9 +306,9 @@
 								const traveler = svg.append("circle")
 									.attr("class", "ping-traveler")
 									.attr("r", 10)
-									.style("fill", "red")
+									.style("fill", "#FFB300")
 									.style("fill-opacity", .3)
-									.style("stroke", "red")
+									.style("stroke", "#FFB300")
 									.style("stroke-width", 3)
 									.attr("cx", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[0])
 									.attr("cy", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[1]);
@@ -395,7 +442,7 @@
 								.attr("r", function(d) {
 									return radiusScale(d.Count);
 								})
-								.attr("fill", "rgba(255, 60, 0, 0.7)") // NYT Red-ish
+								.attr("fill", "#FFB300") // NYT Red-ish
 		                        .attr("stroke", "white")
 		                        .attr("stroke-width", 1)
 		                        .on("mouseover", function(d) {
