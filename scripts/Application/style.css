@@ -1,0 +1,116 @@
+/*Optional: Centers the map on the page*/
+html, body { 
+    font-family: sans-serif; 
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+#map-container { 
+    position: relative; /* so text-buttons anchor to the map bounds */
+    
+    width: min(100%, calc(100vh * (1280 / 810)));
+    height: min(100%, calc(100vw * (810 / 1280)));
+    aspect-ratio: 1280/810;
+
+    max-width: 100%;
+    max-height: 100%;
+
+    margin: auto;
+}
+#map-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+#tooltip {
+    position: absolute;
+    padding: 8px;
+    background: white;
+    border: 1px solid #ccc;
+    pointer-events: none; /* Crucial: clicks pass through to circles */
+    opacity: 0;
+    font-size: 12px;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+    z-index: 20;
+}
+circle:hover { fill: orange; cursor: pointer; }
+.container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+.sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 300px;
+    min-width: 200px; /* Prevents sidebar from shrinking when window size changes */
+    background-color: #f8f8f8;
+    border-right: 1px solid #ddd;
+    z-index: 10;
+}
+.content {
+    flex: 1;
+    height: 100vh;
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* prevents overflow inside the main view area */
+}
+.text-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 40px;
+    z-index: 5;
+}
+    .text-button {
+        bottom:15px;
+        left: 15px;
+        margin-right: 15px;
+        font: 13px/13px Ariel;
+        padding: 6px 0px;
+        display: inline-block;
+        background: #fff;
+        text-align: center;
+        width: 60px;
+        transition: background 0.5s;
+        cursor: pointer;
+        border: 1px solid #666;
+        color: #666
+    }
+        .viewport-small-10 .text-button {
+            border: 1px solid #999;
+            color: #888;
+            font-size: 14px;
+            line-height: 14px;
+            width: 100px;
+            padding: 10px 0;
+        }
+        .text-button.next {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+        .text-button.prev {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+        .text-button:hover {
+            background: #f7f7f5;
+        }
+            .viewport-small-10 .text-button.next {
+                margin-left: 1px;
+            }
+            .text-0 .text-button.prev,
+            .a-text:last-child .text-button.next {
+                cursor: default;
+                opacity: 0.4;
+            }
+text {
+    font-family: 'Comic Sans MS', 'Papyrus', sans-serif;
+    font-size: 32px;
+    font-weight: bold;
+    fill: #FFB300;
+}
