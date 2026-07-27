@@ -78,40 +78,58 @@ d3.queue()
                 svg.selectAll(".time-traveler").remove()
                 svg.selectAll(".time-circle").remove();
             });
+        
+        /////////////////////////////////////////////////////////////
+        /* Define date-related variables. Pull from weekly dataset */
+        /////////////////////////////////////////////////////////////
+
+        // Weeks start at 4am (source: https://stackoverflow.com/questions/5619202/parsing-a-string-to-a-date-in-javascript)
+        const dateCol = detailData.map(function(item){return item.Date}).sort() // extract date column from detailData and sort
+
+        const startDateParts = (dateCol[0]).split("-"); // Get first day from detailsData
+        const startDate = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "04", "00", "00"); // Convert to date object
+        const startDateAxis = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "00", "00", "00"); // Adding a buffer for formatting the time axis
+
+        const endDateParts = (dateCol.at(-1)).split("-"); // Get last day from detailsData 
+        const endDate = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "3", "59", "59"); // Convert to date object 
+        //const endDateAxis = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "12", "59", "59"); // Adding a buffer for formatting the time axis
+
+        const start = startDate.getTime(); // convert from date to milliseconds
+        const end = endDate.getTime() + 1000; // convert from date to milliseconds
+        const times = 49 // number of 240 minute intervals (4 hour intervals) in a week
+        const arrayIncrement = []; // initialize
+        const timeInterval=14400000 // milliseconds in 4 hours
+
+        // Function creates an array of 8 dates (Sunday to Sunday) to page through the animation by day
+        function getDatesInRange(startDate, endDate) {
+            const dates = [];
+            const currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                dates.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            return dates;
+        }
+
+        array_test = getDatesInRange(startDateAxis, endDate);
+        console.log(array_test[0]);
+
+        for (let i = 0; i < times; ++i) {
+            const u = i * timeInterval; // number of milliseconds per 4 hours
+            const v = new Date(start + u);
+            const dict = {
+                DateTime: v,
+                HubLatitude: null,
+                HubLongitude: null,
+                NumberPings: null
+            }
+            arrayIncrement.push(dict); // Create an array of dictionaries so we can join them on DateTime
+        }
+        
 
         function singleAnimation(d) {
-            // Grabbing start date and end date from the detailData set to set timelapse parameters
-            // Weeks start at 4am
-            // https://stackoverflow.com/questions/5619202/parsing-a-string-to-a-date-in-javascript
-            const dateCol = detailData.map(function(item){return item.Date}).sort() // Extract date column from detailData and sort
-
-            const startDateParts = (dateCol[0]).split("-"); // Get first day from detailsData
-            const startDate = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "04", "00", "00"); // Convert to date object
-            const startDateAxis = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "00", "00", "00"); // Adding a buffer for formatting the time axis
-
-            const endDateParts = (dateCol.at(-1)).split("-"); // Get last day from detailsData 
-            const endDate = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "3", "59", "59"); // Convert to date object 
-            const endDateAxis = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "12", "59", "59"); // Adding a buffer for formatting the time axis
-
-            const start = startDate.getTime(); // convert from date to milliseconds
-            const end = endDate.getTime() + 1000; // convert from date to milliseconds
-            const times = 49 // number of 240 minute intervals (4 hour intervals) in a week
-            const arrayIncrement = []; // initialize
-            //const timeInterval = 3600000 // milliseconds in 1 hour
-            const timeInterval=14400000 // milliseconds in 4 hours
-
-
-            for (let i = 0; i < times; ++i) {
-                const u = i * timeInterval; // number of milliseconds per 4 hours
-                const v = new Date(start + u);
-                const dict = {
-                    DateTime: v,
-                    HubLatitude: null,
-                    HubLongitude: null,
-                    NumberPings: null
-                }
-                arrayIncrement.push(dict); // Create an array of dictionaries so we can join them on DateTime
-            }
 
             // Filter dataset based on selected sturgeon ID
             const timelapseData = detailData.filter(obs => obs.ID === d.ID);
