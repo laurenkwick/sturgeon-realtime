@@ -432,9 +432,19 @@
 		                  			svg.selectAll(".sturgeon-detail").remove();
 
 		                  			// Filter details data
-		                  			const allObservations = detailData.filter(obs => obs.Hub_ID === clickedHubName);
-		                  			const uniqueMap = new Map(allObservations.map(obs => [obs.ID, obs]));
+		                  			const allObservations = movementData.filter(obs => obs.Hub_ID === clickedHubName);
+		                  			const uniqueMap = new Map(allObservations.map(obs => [obs.Sturgeon_ID, obs]));
 		                  			const matches = Array.from(uniqueMap.values());
+									console.log(detailData);
+									console.log(matches);
+									const tempDetails = detailData;
+									console.log(detailData.constructor.name);
+									console.log(matches.constructor.name);
+									let merged = tempDetails.filter(e => matches.some(f => f.Sturgeon_ID == e.Sturgeon_ID));
+									console.log(merged);
+									merged = _.merge(merged, matches);
+
+									conosole.log(merged);
 
 		                  			const segments = matches.length
 
@@ -458,7 +468,7 @@
 		                  				.attr("stroke-width", 0.5)
 		                  				.on("mouseover", function(d) {
 		                        			tooltip.style("opacity", 1)
-		                        				.html("<strong>" + d.ID + "</strong><br/>Sex: " + d.Sex);
+		                        				.html("<strong>" + d.Sturgeon_ID + "</strong><br/>Sex: " + d.Sex);
 		                       				})
 		                        		.on("mousemove", function(d) {
 		                        			tooltip.style("left", (d3.event.pageX + 15) + "px")
@@ -472,12 +482,7 @@
 		                  				.duration(800)
 		                  				.delay((d, i) => i * 30) 
 		                  				.attr("cx", function(d, i) {
-		                  					// Option 1: 1 ring
-		                  					/*const angle = (i / segments) * (2 * Math.PI);
-		                  					const radius = 50;
-		                  					return hubX + radius * Math.cos(angle);*/
-
-		                  					// Option 2: multiple rings
+		                  					// Function for ring burst appearance
 		                  					const ringIndex = Math.floor(i/10);
 		                  					const posOnRing = i % 10;
 		                  					const radius = 30 + (ringIndex * 15);
@@ -485,12 +490,7 @@
 		                  					return hubX + radius * Math.cos(angle);
 		                  				})
 		                  				.attr("cy", function(d, i) {
-		                  					// Option 1: 1 ring
-		                  					/*const angle = (i/segments) * (2 * Math.PI);
-		                  					const radius = 50;
-		                  					return hubY + radius * Math.sin(angle);*/
-
-		                  					// Option 2: multiple rings
+		                  					// Function for ring burst appearance
 		                  					const ringIndex = Math.floor(i/10);
 		                  					const posOnRing = i % 10;
 		                  					const radius = 30 + (ringIndex * 15);
