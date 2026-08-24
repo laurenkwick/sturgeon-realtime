@@ -99,45 +99,57 @@
 
 					var hubConverter = function(d) {
 						return {
-							Hub: d.Hub,
-							Count: parseFloat(d.Count),
-							HubLatitude: parseFloat(d.HubLatitude),
-							HubLongitude: parseFloat(d.HubLongitude)
+							Hub_ID: d.Hub_ID,
+							Sturgeon_Count: parseFloat(d.Sturgeon_Count),
+							Hub_Latitude: parseFloat(d.Hub_Latitude),
+							Hub_Longitude: parseFloat(d.Hub_Longitude)
 						};
 					};
 
 					var detailConverter = function(d) {
 						return {
-							Hub: d.Hub,
-							ID: d.ID,
-							Length: parseFloat(d["Animal.Length..m."]),
-							Sex: d["Animal.Sex"],
-							Date: d["Date"],
-							DateTime: d["Date.Time"]
-						};
+							Sturgeon_ID: d.Sturgeon_ID,
+							Sturgeon_Name: d.Sturgeon_Name,
+							Sex: d.Sex,
+							Fork_Length: d.Fork_Length,
+							Fork_Length_2: d.Fork_Length_2,
+							Date_Tagged: d.Date_Tagged
+						}
 					};
 
+					var movementConverter = function(d) {
+						return {
+							Sturgeon_ID: d.Sturgeon_ID,
+							Date_Time_Rounded: d.Date_Time_Rounded,
+							Hub_ID: d.Hub_ID,
+							Arrival_Time: d.Arrival_Time,
+							Distinct_Hubs: d.Distinct_Hubs,
+							Tie_Breaker: d.Tie_Breaker
+						}
+					}
+
 					d3.queue()
-						.defer(d3.csv, "../../data/sturgeon_data.csv", hubConverter)
-						.defer(d3.csv, "../../data/sturgeon_details.csv", detailConverter)
-						.await(function(error, hubData, detailData) {
+						.defer(d3.csv, "../../data/Hub_Summary.csv", hubConverter)
+						.defer(d3.csv, "../../data/Sturgeon_Details.csv", detailConverter)
+						.defer(d3.csv, "../../data/Sturgeon_Movement.csv", movementConverter)
+						.await(function(error, hubData, detailData, movementData) {
 
 							if (error) throw error;
 
-							radiusScale.domain([0, d3.max(hubData, d => d.Count)]);
+							radiusScale.domain([0, d3.max(hubData, d => d.Sturgeon_Count)]);
 							sexColorScale = d3.scaleOrdinal()
 								.domain(["Male", "Female", "Unknown"])
 								.range(["#00d4ff", "#ff00dd", "#cccccc"]);
 
 							// Draw the basemap image first
 							svg.append("image")
-								.attr("xlink:href", "../../data/sturgeonBasemap2.png")
+								.attr("xlink:href", "../../data/Basemap.png")
 								.attr("width", width)
 								.attr("height", height)
 								.on("click", function() {
 									// Reset everything when clicking the background
 									circles.transition().duration(500)
-										.attr("r", d => radiusScale(d.Count))
+										.attr("r", d => radiusScale(d.Sturgeon_Count))
 										.style("opacity", 0.7);
 									//svg.selectAll(".hub").remove();
 									svg.selectAll(".sturgeon-detail").remove()
@@ -387,20 +399,20 @@
 								.attr("class", "hub")
 								.attr("cx", function(d) {
 									// projection() retunrs [x,y]
-									return projection([d.HubLongitude, d.HubLatitude])[0];
+									return projection([d.Hub_Longitude, d.Hub_Latitude])[0];
 								})
 								.attr("cy", function(d) {
-									return projection([d.HubLongitude, d.HubLatitude])[1];
+									return projection([d.Hub_Longitude, d.Hub_Latitude])[1];
 								})
 								.attr("r", function(d) {
-									return radiusScale(d.Count);
+									return radiusScale(d.Sturgeon_Count);
 								})
 								.attr("fill", "rgba(255, 60, 0, 0.7)") // NYT Red-ish
 		                        .attr("stroke", "white")
 		                        .attr("stroke-width", 1)
 		                        .on("mouseover", function(d) {
 		                        	tooltip.style("opacity", 1)
-		                        		.html("<strong>" + d.Hub + "</strong><br/>Count: " + d.Count);
+		                        		.html("<strong>" + d.Hub_ID + "</strong><br/>Count: " + d.Sturgeon_Count);
 		                        })
 		                        .on("mousemove", function(d) {
 		                        	tooltip.style("left", (d3.event.pageX + 15) + "px")
@@ -411,16 +423,16 @@
 		                        })
 		                        .on("click", function(d) {
 
-		                        	const clickedHubName = d.Hub;
-		                        	const hubX = projection([d.HubLongitude, d.HubLatitude])[0];
-		                        	const hubY = projection([d.HubLongitude, d.HubLatitude])[1];
+		                        	const clickedHubName = d.Hub_ID;
+		                        	const hubX = projection([d.Hub_Longitude, d.Hub_Latitude])[0];
+		                        	const hubY = projection([d.Hub_Longitude, d.Hub_Latitude])[1];
 
 		                  			// Fade other hubs and details
 		                  			circles.transition().duration(500).style("opacity", 0.3);
 		                  			svg.selectAll(".sturgeon-detail").remove();
 
 		                  			// Filter details data
-		                  			const allObservations = detailData.filter(obs => obs.Hub === clickedHubName);
+		                  			const allObservations = detailData.filter(obs => obs.Hub_ID === clickedHubName);
 		                  			const uniqueMap = new Map(allObservations.map(obs => [obs.ID, obs]));
 		                  			const matches = Array.from(uniqueMap.values());
 
