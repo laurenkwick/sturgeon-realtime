@@ -4,6 +4,7 @@
 		<meta charset="utf-8">
 		<title>D3 interactive sturgeon map</title>
 		<script type="text/javascript" src="../../d3.js"></script>
+		<script type="text/javascript" src="../../lodash.js"></script>
 		<style>
 			/*Optional: Centers the map on the page*/
 			body { font-family: sans-serif; }
@@ -353,9 +354,11 @@
 								sidebar.html(`
 									<div style="padding: 20px;">
 										<h2> Sturgeon Detail </h2>
-										<p><strong>ID:</strong> ${detailID.ID}</p>
+										<p><strong>Name:</strong> ${detailID.Sturgeon_Name}</p>
+										<p><strong>ID:</strong> ${detailID.Sturgeon_ID}</p>
 										<p><strong>Sex:</strong> ${detailID.Sex}</p>
-										<p><strong>Fork Length:</strong> ${detailID.Length}</p>
+										<p><strong>Fork Length:</strong> ${detailID.Fork_Length}</p>
+										<p><strong>Date Tagged:</strong> ${detailID.Date_Tagged}</p>
 										<button id="play-button" type="button">Play timelapse!</button>
 									</div>
 								`);
@@ -435,28 +438,20 @@
 		                  			const allObservations = movementData.filter(obs => obs.Hub_ID === clickedHubName);
 		                  			const uniqueMap = new Map(allObservations.map(obs => [obs.Sturgeon_ID, obs]));
 		                  			const matches = Array.from(uniqueMap.values());
-									console.log(detailData);
-									console.log(matches);
 									const tempDetails = detailData;
-									console.log(detailData.constructor.name);
-									console.log(matches.constructor.name);
 									let merged = tempDetails.filter(e => matches.some(f => f.Sturgeon_ID == e.Sturgeon_ID));
-									console.log(merged);
 									merged = _.merge(merged, matches);
 
-									conosole.log(merged);
-
-		                  			const segments = matches.length
+									console.log(merged);
 
 		                  			const burstGroup = svg.append("g").attr("class", "burst-layer");
 
 		                  			// Clear and previous detail points
 		                  			burstGroup.selectAll(".sturgeon-detail").remove();
 
-
 		                  			// Create the burst
 		                  			const detailCircles = burstGroup.selectAll(".sturgeon-detail")
-		                  				.data(matches)
+		                  				.data(merged)
 		                  				.enter()
 		                  				.append("circle")
 		                  				.attr("class", "sturgeon-detail")
@@ -500,7 +495,6 @@
 		                  				.attr("r", 4);
 
 						});
-
 					});
 
 				</script>
