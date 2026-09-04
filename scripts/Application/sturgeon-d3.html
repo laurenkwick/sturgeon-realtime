@@ -189,8 +189,8 @@
 								// Transition parameters
 								const fadeInDurationInit = 200; // How long (in milliseconds) should each hour last
 								const fadeOutDurationInit = 200;
-								const easingOnEnter = d3.easeLinear;
-								const easingOnExit = d3.easeLinear;
+								const easingOnEnter = d3.easeCubic;
+								const easingOnExit = d3.easeCubic;
 
 								// Text time series
 								const textX = 500;
@@ -235,8 +235,8 @@
 									if (index === 0) return;
 
 									// Transition parameters
-									var fadeInDuration = 200; // How long (in milliseconds) should each hour last
-									var fadeOutDuration = 200;
+									var fadeInDuration = 300; // How long (in milliseconds) should each hour last
+									var fadeOutDuration = 300;
 
 									// We are looping through each element of our datetime array. We want to check if a datetime element contains
 									// a lat/long location. If so, we want to animate it.
@@ -254,16 +254,14 @@
 										fadeOutDuration = fadeOutDuration / pos.Distinct_Hubs;
 									}
 
-									console.log(fadeInDuration);
-
 									// If we found coordinates for the selected date time, we update the animation
 									if (hasCoords) {
 										const [nextX, nextY] = projection([pos.Hub_Longitude, pos.Hub_Latitude]);
 										const pingCount = pos.NumberPings; // Not currently used, but we could animate size of ping based on number of pings in interval
 
 										transitionChain = transitionChain.transition()
-											.duration(50)
-											.ease(easingOnEnter)
+											//.duration(50)
+											//.ease(easingOnEnter)
 											.style("opacity", 0) // Hide the traveler during the jump phase
 											.on("start", function() {
 												d3.select(this)
@@ -279,25 +277,29 @@
 											.attr("r", 10)
 											// Fade out effect
 											.transition()
-											.ease(easingOnEnter)
+											.ease(easingOnExit)
 											.duration(fadeOutDuration)
 											.style("opacity", 0);
 										
 										textTransition = textTransition.transition()
 											.text(printDateString)
-											.duration(fadeInDuration + fadeOutDuration + 50)
+											.transition()
+											.duration(fadeInDuration)
 											.ease(easingOnEnter)
+											.transition()
+											.ease(easingOnExit)
+											.duration(fadeInDuration)
 											.style("opacity", 1);
 									
 									// If coordinates were not found for the selected datetime, we do not animate this datetime value.
 									} else {
 										transitionChain = transitionChain.transition()
-											.duration(fadeInDuration + fadeOutDuration + 50)
+											.duration(fadeInDuration + fadeOutDuration)
 											.style("opacity", 0);
 										
 										textTransition = textTransition.transition()
 											.text(printDateString)
-											.duration(fadeInDuration + fadeOutDuration + 50)
+											.duration(fadeInDuration + fadeOutDuration)
 											.ease(easingOnEnter)
 											.style("opacity", 1);
 									}
