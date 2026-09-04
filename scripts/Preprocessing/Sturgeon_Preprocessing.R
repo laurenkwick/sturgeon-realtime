@@ -74,6 +74,9 @@ sturgeon_movement <- sturgeon_summary %>%
     Distinct_Hubs = distinct_hubs,
     Tie_Breaker = tiebreaker
   ) %>%
+  mutate(
+    Date_Time_Rounded = format(Date_Time_Rounded, "%Y-%m-%d %H:%M:%S")
+  )
   select(Sturgeon_ID, Date_Time_Rounded, Hub_ID, Arrival_Time, Distinct_Hubs, Tie_Breaker)
 
 ##############################
