@@ -160,40 +160,7 @@
 								});
 
 							function singleAnimation(d) {
-								// Grabbing start date and end date from the detailData set to set timelapse parameters
-								// Weeks start at 4am
-								// https://stackoverflow.com/questions/5619202/parsing-a-string-to-a-date-in-javascript
-								/*
-								const dateCol = detailData.map(function(item){return item.Date}).sort() // Extract date column from detailData and sort
 
-								const startDateParts = (dateCol[0]).split("-"); // Get first day from detailsData
-								const startDate = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "04", "00", "00"); // Convert to date object
-								const startDateAxis = new Date(startDateParts[0], startDateParts[1] -1, startDateParts[2], "00", "00", "00"); // Adding a buffer for formatting the time axis
-
-								const endDateParts = (dateCol.at(-1)).split("-"); // Get last day from detailsData 
-								const endDate = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "3", "59", "59"); // Convert to date object 
-								const endDateAxis = new Date(endDateParts[0], endDateParts[1] -1, endDateParts[2], "12", "59", "59"); // Adding a buffer for formatting the time axis
-
-								const start = startDate.getTime(); // convert from date to milliseconds
-								const end = endDate.getTime() + 1000; // convert from date to milliseconds
-								const times = 49 // number of 240 minute intervals (4 hour intervals) in a week
-								const arrayIncrement = []; // initialize
-								//const timeInterval = 3600000 // milliseconds in 1 hour
-								const timeInterval=14400000 // milliseconds in 4 hours
-
-
-								for (let i = 0; i < times; ++i) {
-									const u = i * timeInterval; // number of milliseconds per 4 hours
-									const v = new Date(start + u);
-									const dict = {
-										DateTime: v,
-										HubLatitude: null,
-										HubLongitude: null,
-										NumberPings: null
-									}
-									arrayIncrement.push(dict); // Create an array of dictionaries so we can join them on DateTime
-								}
-								*/
 								console.log(movementData);
 
 								// Filter dataset based on selected sturgeon ID
@@ -220,8 +187,8 @@
 									.style("fill", "red"); // remove old hubs
 
 								// Transition parameters
-								const fadeInDuration = 200; // How long (in milliseconds) should each hour last
-								const fadeOutDuration = 200;
+								const fadeInDurationInit = 200; // How long (in milliseconds) should each hour last
+								const fadeOutDurationInit = 200;
 								const easingOnEnter = d3.easeLinear;
 								const easingOnExit = d3.easeLinear;
 
@@ -260,12 +227,16 @@
 
 								// Initialize the transitionChain variable - this will be written over in the following forEach loop, allowing
 								// a new animation to be dispalyed
-								let transitionChain = traveler.transition().duration(fadeInDuration);
-								let textTransition = textTime.transition().duration(fadeInDuration);
+								let transitionChain = traveler.transition().duration(fadeInDurationInit);
+								let textTransition = textTime.transition().duration(fadeInDurationInit);
 
 								timelapseWithCoords.forEach((pos, index) => {
 									// We've already initialized and animated the first index of our array, so skipping here
 									if (index === 0) return;
+
+									// Transition parameters
+									var fadeInDuration = 200; // How long (in milliseconds) should each hour last
+									var fadeOutDuration = 200;
 
 									// We are looping through each element of our datetime array. We want to check if a datetime element contains
 									// a lat/long location. If so, we want to animate it.
@@ -277,6 +248,13 @@
 									const year = printTime.getFullYear();
 									const hour = printTime.getHours();
 									const printDateString = month + " " + dayOfMonth + ", " + year + " " + hour + ":00";
+
+									if (pos.Distinct_Hubs > 1) {
+										fadeInDuration = fadeInDuration / pos.Distinct_Hubs;
+										fadeOutDuration = fadeOutDuration / pos.Distinct_Hubs;
+									}
+
+									console.log(fadeInDuration);
 
 									// If we found coordinates for the selected date time, we update the animation
 									if (hasCoords) {
