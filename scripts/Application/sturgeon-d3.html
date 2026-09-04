@@ -163,6 +163,7 @@
 								// Grabbing start date and end date from the detailData set to set timelapse parameters
 								// Weeks start at 4am
 								// https://stackoverflow.com/questions/5619202/parsing-a-string-to-a-date-in-javascript
+								/*
 								const dateCol = detailData.map(function(item){return item.Date}).sort() // Extract date column from detailData and sort
 
 								const startDateParts = (dateCol[0]).split("-"); // Get first day from detailsData
@@ -192,43 +193,21 @@
 									}
 									arrayIncrement.push(dict); // Create an array of dictionaries so we can join them on DateTime
 								}
+								*/
+								console.log(movementData);
 
 								// Filter dataset based on selected sturgeon ID
-								const timelapseData = detailData.filter(obs => obs.ID === d.ID);
+								const timelapseData = movementData.filter(obs => obs.Sturgeon_ID === d.Sturgeon_ID);
+								console.log(timelapseData);
 
 								// Join filtered data to hub data, so that each observation is associated with the Hub's lat/long data
 								const timelapseWithCoords = timelapseData.map(function(e) {
-									const hub = hubData.find(h => h.Hub === e.Hub) || {};
-									e.DateTime = new Date(e.DateTime); // update from string to DateTime 
+									const hub = hubData.find(h => h.Hub_ID === e.Hub_ID) || {};
+									e.Date_Time_Rounded = new Date(e.Date_Time_Rounded); // update from string to DateTime 
 									return { ...e, ...hub };
 								}).sort((a, b) => new Date(a.Date) - new Date(b.date));
 
-								// Change loop condition to length - 1 so i + 1 exists
-								for (let i = 0; i < arrayIncrement.length; ++i) {
-								    const startTime = arrayIncrement[i].DateTime.getTime(); // Grab a datatime
-								    
-								    var endTime = null
-								    if (i == (arrayIncrement.length - 1)) {
-								    	endTime = arrayIncrement[i].DateTime.getTime() + timeInterval; // If last date time in the array, manually calculate end time
-								    } else {
-								    	endTime = arrayIncrement[i + 1].DateTime.getTime(); // Else, grab the next datetime in the index
-								    }
-
-									// Check if any of the times in the filtered dataset fall within the start and end time we've indexed
-								    const pingMatches = timelapseWithCoords.filter(({ DateTime }) => {
-								        const timeValue = DateTime.getTime();
-								        // Check if the time falls strictly within the window
-								        return timeValue >= startTime && timeValue < endTime;
-								    });
-
-									// If at least one ping was identified within this datetime interval, update the overall datetime array to contain the lat/long
-									// information for that timerange
-								    if (pingMatches.length > 0) {
-								    	arrayIncrement[i].HubLatitude = pingMatches[0].HubLatitude;
-								    	arrayIncrement[i].HubLongitude = pingMatches[0].HubLongitude;
-								    	arrayIncrement[i].NumberPings = pingMatches.length; // This variable is not currently used in the animation, but shows number of pings within the given datetime.
-								    };
-								}
+								console.log(timelapseWithCoords);
 
 								// Prepare map for timelapse animation
 								svg.selectAll(".ping-traveler").remove(); // clean up old animations
@@ -253,7 +232,7 @@
 								// Date Formatting for Time Series
 								const monthList = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-								const firstTime = arrayIncrement[0].DateTime
+								const firstTime = timelapseWithCoords[0].Date_Time_Rounded
 
 								const dayOfMonth = firstTime.getDate();
 								const month = monthList[firstTime.getMonth()];
@@ -276,22 +255,22 @@
 									.style("fill-opacity", .3)
 									.style("stroke", "red")
 									.style("stroke-width", 3)
-									.attr("cx", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[0])
-									.attr("cy", projection([arrayIncrement[0].HubLongitude, arrayIncrement[0].HubLatitude])[1]);
+									.attr("cx", projection([timelapseWithCoords[0].Hub_Longitude, timelapseWithCoords[0].Hub_Latitude])[0])
+									.attr("cy", projection([timelapseWithCoords[0].Hub_Longitude, timelapseWithCoords[0].Hub_Latitude])[1]);
 
 								// Initialize the transitionChain variable - this will be written over in the following forEach loop, allowing
 								// a new animation to be dispalyed
 								let transitionChain = traveler.transition().duration(fadeInDuration);
 								let textTransition = textTime.transition().duration(fadeInDuration);
 
-								arrayIncrement.forEach((pos, index) => {
+								timelapseWithCoords.forEach((pos, index) => {
 									// We've already initialized and animated the first index of our array, so skipping here
 									if (index === 0) return;
 
 									// We are looping through each element of our datetime array. We want to check if a datetime element contains
 									// a lat/long location. If so, we want to animate it.
-									const hasCoords = pos.HubLongitude !== null && pos.HubLatitude != null;
-									const printTime = pos.DateTime;
+									const hasCoords = pos.Hub_Longitude !== null && pos.Hub_Latitude != null;
+									const printTime = pos.Date_Time_Rounded;
 
 									const dayOfMonth = printTime.getDate();
 									const month = monthList[printTime.getMonth()];
@@ -301,7 +280,7 @@
 
 									// If we found coordinates for the selected date time, we update the animation
 									if (hasCoords) {
-										const [nextX, nextY] = projection([pos.HubLongitude, pos.HubLatitude]);
+										const [nextX, nextY] = projection([pos.Hub_Longitude, pos.Hub_Latitude]);
 										const pingCount = pos.NumberPings; // Not currently used, but we could animate size of ping based on number of pings in interval
 
 										transitionChain = transitionChain.transition()
@@ -441,8 +420,6 @@
 									const tempDetails = detailData;
 									let merged = tempDetails.filter(e => matches.some(f => f.Sturgeon_ID == e.Sturgeon_ID));
 									merged = _.merge(merged, matches);
-
-									console.log(merged);
 
 		                  			const burstGroup = svg.append("g").attr("class", "burst-layer");
 
