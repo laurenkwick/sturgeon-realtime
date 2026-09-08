@@ -186,12 +186,6 @@
 									.attr("r", 3)
 									.style("fill", "red"); // remove old hubs
 
-								// Transition parameters
-								const fadeInDurationInit = 200; // How long (in milliseconds) should each hour last
-								const fadeOutDurationInit = 200;
-								const easingOnEnter = d3.easeCubic;
-								const easingOnExit = d3.easeCubic;
-
 								// Text time series
 								const textX = 500;
 								const textY = 300;
@@ -227,9 +221,7 @@
 
 								// Initialize the transitionChain variable - this will be written over in the following forEach loop, allowing
 								// a new animation to be dispalyed
-								//let transitionChain = traveler.transition().duration(fadeInDurationInit);
 								let transitionChain = traveler;
-								//let textTransition = textTime.transition().duration(fadeInDurationInit);
 								let textTransition = textTime;
 						
 								timelapseWithCoords.forEach((pos, index) => {
@@ -237,8 +229,13 @@
 									if (index === 0) return;
 
 									// Transition parameters
-									var fadeInDuration = 300; // How long (in milliseconds) should each hour last
-									var fadeOutDuration = 300;
+									var transition1Length = 50;
+									var transition2Length = 400;
+									var transition3Length = 200;
+
+									const easing1 = d3.easeLinear;
+									const easing2 = d3.easeCircleOut;
+									const easing3 = d3.easeLinear;
 
 									// We are looping through each element of our datetime array. We want to check if a datetime element contains
 									// a lat/long location. If so, we want to animate it.
@@ -252,8 +249,9 @@
 									const printDateString = month + " " + dayOfMonth + ", " + year + " " + hour + ":00";
 
 									if (pos.Distinct_Hubs > 1) {
-										fadeInDuration = fadeInDuration / pos.Distinct_Hubs;
-										fadeOutDuration = fadeOutDuration / pos.Distinct_Hubs;
+										transition1Length = transition1Length / pos.Distinct_Hubs;
+										transition2Length = transition2Length / pos.Distinct_Hubs;
+										transition3Length = transition3Length / pos.Distinct_Hubs;
 									}
 
 									// If we found coordinates for the selected date time, we update the animation
@@ -261,48 +259,56 @@
 										const [nextX, nextY] = projection([pos.Hub_Longitude, pos.Hub_Latitude]);
 										const pingCount = pos.NumberPings; // Not currently used, but we could animate size of ping based on number of pings in interval
 
-										transitionChain = transitionChain.transition()
-											//.duration(50)
-											//.ease(easingOnEnter)
-											//.style("opacity", 0) // Hide the traveler during the jump phase
-											
+										transitionChain = transitionChain
+											// Transition 1: Move pointer to hub location
+											.transition()
+											.duration(transition1Length)
+											.ease(easing1)
+											.style("opacity", 0)
 											.attr("cx", nextX)
 											.attr("cy", nextY)
 											.attr("r", 2)
 
-											// Handle the fade-in and grow effect
+											// Transition 2: Increase radius size
 											.transition()
-											.duration(fadeInDuration)
-											.ease(easingOnEnter)
+											.duration(transition2Length)
+											.ease(easing2)
 											.style("opacity", 1)
 											.attr("r", 10)
 											
-											// Fade out effect
+											// Transition 3: Fade to transparent
 											.transition()
-											.ease(easingOnExit)
-											.duration(fadeOutDuration)
+											.duration(transition3Length)
+											.ease(easing3)
 											.style("opacity", 0);
 										
-										textTransition = textTransition.transition()
+										textTransition = textTransition
+											// Transition 1: No change, filling time
+											.transition()
+											.duration(transition1Length)
+											.ease(easing1)
+											
+											// Transition 2: Display timestamp in sync with map animation
+											.transition()
+											.duration(transition2Length)
+											.ease(easing2)
 											.text(printDateString)
+											
+											// Transition 3: No change, filling time
 											.transition()
-											.duration(fadeInDuration)
-											.ease(easingOnEnter)
-											.transition()
-											.ease(easingOnExit)
-											.duration(fadeInDuration)
+											.duration(transition3Length)
+											.ease(easing3)
 											.style("opacity", 1);
 									
 									// If coordinates were not found for the selected datetime, we do not animate this datetime value.
 									} else {
 										transitionChain = transitionChain.transition()
-											.duration(fadeInDuration + fadeOutDuration)
+											.duration(transition1Length + transition2Length + transition3Length)
 											.style("opacity", 0);
 										
 										textTransition = textTransition.transition()
+											.duration(transition1Length + transition2Length + transition3Length)
 											.text(printDateString)
-											.duration(fadeInDuration + fadeOutDuration)
-											.ease(easingOnEnter)
 											.style("opacity", 1);
 									}
 								});
