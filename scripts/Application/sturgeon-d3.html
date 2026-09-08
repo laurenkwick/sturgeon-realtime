@@ -227,9 +227,11 @@
 
 								// Initialize the transitionChain variable - this will be written over in the following forEach loop, allowing
 								// a new animation to be dispalyed
-								let transitionChain = traveler.transition().duration(fadeInDurationInit);
-								let textTransition = textTime.transition().duration(fadeInDurationInit);
-
+								//let transitionChain = traveler.transition().duration(fadeInDurationInit);
+								let transitionChain = traveler;
+								//let textTransition = textTime.transition().duration(fadeInDurationInit);
+								let textTransition = textTime;
+						
 								timelapseWithCoords.forEach((pos, index) => {
 									// We've already initialized and animated the first index of our array, so skipping here
 									if (index === 0) return;
@@ -262,19 +264,19 @@
 										transitionChain = transitionChain.transition()
 											//.duration(50)
 											//.ease(easingOnEnter)
-											.style("opacity", 0) // Hide the traveler during the jump phase
-											.on("start", function() {
-												d3.select(this)
-													.attr("cx", nextX) // Teleport the circle so it doesn't slide accross screen
-													.attr("cy", nextY)
-													.attr("r", 2);  
-											})
+											//.style("opacity", 0) // Hide the traveler during the jump phase
+											
+											.attr("cx", nextX)
+											.attr("cy", nextY)
+											.attr("r", 2)
+
 											// Handle the fade-in and grow effect
 											.transition()
 											.duration(fadeInDuration)
 											.ease(easingOnEnter)
 											.style("opacity", 1)
 											.attr("r", 10)
+											
 											// Fade out effect
 											.transition()
 											.ease(easingOnExit)
