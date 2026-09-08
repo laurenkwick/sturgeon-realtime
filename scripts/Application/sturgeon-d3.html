@@ -47,10 +47,10 @@
 				align-items: center;
 			}
 			text {
-				font-family: 'Comic Sans MS', 'Papyrus', sans-serif;
-				font-size: 32px;
-				font-weight: bold;
-				fill: red;
+				font-family: candara, sans-serif;
+				font-size: 52px;
+				font-weight: 400;
+				fill: #26828E;
 			}
 		</style>
 	</head>
@@ -161,11 +161,8 @@
 
 							function singleAnimation(d) {
 
-								console.log(movementData);
-
 								// Filter dataset based on selected sturgeon ID
 								const timelapseData = movementData.filter(obs => obs.Sturgeon_ID === d.Sturgeon_ID);
-								console.log(timelapseData);
 
 								// Join filtered data to hub data, so that each observation is associated with the Hub's lat/long data
 								const timelapseWithCoords = timelapseData.map(function(e) {
@@ -173,8 +170,6 @@
 									e.Date_Time_Rounded = new Date(e.Date_Time_Rounded); // update from string to DateTime 
 									return { ...e, ...hub };
 								}).sort((a, b) => new Date(a.Date) - new Date(b.date));
-
-								console.log(timelapseWithCoords);
 
 								// Prepare map for timelapse animation
 								svg.selectAll(".ping-traveler").remove(); // clean up old animations
@@ -186,36 +181,41 @@
 									.attr("r", 3)
 									.style("fill", "red"); // remove old hubs
 
-								// Text time series
-								const textX = 500;
-								const textY = 300;
+								// Styling Text Varialbe
+								const textX = 380; // x position
+								const textY = 70; // y position
 
 								// Date Formatting for Time Series
 								const monthList = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-								const firstTime = timelapseWithCoords[0].Date_Time_Rounded
-
+								const firstTime = timelapseWithCoords[0].Date_Time_Rounded;
 								const dayOfMonth = firstTime.getDate();
 								const month = monthList[firstTime.getMonth()];
 								const year = firstTime.getFullYear();
 								const hour = firstTime.getHours();
-								const dateString = month + " " + dayOfMonth + ", " + year + " " + hour + ":00";
+								const dateString = month + " " + dayOfMonth + ", " + year + "<br>" + hour + ":00";
 								
+								// Initialize Text Variable
 								const textTime = svg.append("text")
 									.attr("class", "time-traveler")
 									.text(dateString)
 									.attr("x", textX)
 									.attr("y", textY);
+
+								// Styling Map Animation
+								const pointerFillColor = "#31688E";
+								const pointerStrokeColor = "#31688E";
+								const pointerFillOpacity = .3
+								const pointerStrokeWidth = 3
 								
 								// Initialize the traveler variables - setting starting style characteristics and first lat/long location. 
 								// It's possible this is null in the beginning, if a ping was not recognized at the start of our time series.
 								const traveler = svg.append("circle")
 									.attr("class", "ping-traveler")
 									.attr("r", 10)
-									.style("fill", "red")
-									.style("fill-opacity", .3)
-									.style("stroke", "red")
-									.style("stroke-width", 3)
+									.style("fill", pointerFillColor)
+									.style("fill-opacity", pointerFillOpacity)
+									.style("stroke", pointerStrokeColor)
+									.style("stroke-width", pointerStrokeWidth)
 									.attr("cx", projection([timelapseWithCoords[0].Hub_Longitude, timelapseWithCoords[0].Hub_Latitude])[0])
 									.attr("cy", projection([timelapseWithCoords[0].Hub_Longitude, timelapseWithCoords[0].Hub_Latitude])[1]);
 
@@ -236,6 +236,10 @@
 									const easing1 = d3.easeLinear;
 									const easing2 = d3.easeCircleOut;
 									const easing3 = d3.easeLinear;
+
+									// Styling parameters
+									var pointerSmall = 5;
+									var pointerLarge = 25;
 
 									// We are looping through each element of our datetime array. We want to check if a datetime element contains
 									// a lat/long location. If so, we want to animate it.
@@ -267,14 +271,14 @@
 											.style("opacity", 0)
 											.attr("cx", nextX)
 											.attr("cy", nextY)
-											.attr("r", 2)
+											.attr("r", pointerSmall)
 
 											// Transition 2: Increase radius size
 											.transition()
 											.duration(transition2Length)
 											.ease(easing2)
 											.style("opacity", 1)
-											.attr("r", 10)
+											.attr("r", pointerLarge)
 											
 											// Transition 3: Fade to transparent
 											.transition()
@@ -335,7 +339,6 @@
 								button.on("click", function() {
 									singleAnimation(detailID);
 								});
-
 
 							};
 
