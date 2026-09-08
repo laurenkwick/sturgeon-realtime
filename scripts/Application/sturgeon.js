@@ -22,7 +22,7 @@ const projection = d3.geoMercator()
     });
 
 // Create a scale for circle size
-const radiusScale = d3.scaleSqrt().range([5,50]);
+const radiusScale = d3.scaleSqrt().range([1,40]);
 
 // Initialize tooltip
 var tooltip = d3.select("#tooltip");
@@ -89,6 +89,24 @@ d3.queue()
                 svg.selectAll(".time-traveler").remove()
                 svg.selectAll(".time-circle").remove();
             });
+        
+        // Create Sturgeon List
+        var sturgeonList = detailData.map(a => a.Sturgeon_ID);
+        
+        d3.select("#selectSturgeon")
+            .selectAll('option')
+            .data(sturgeonList)
+            .enter()
+            .append('option')
+            .text(function (d) {return d; })
+            .attr("value", function (d) { return d; });
+
+        d3.select("#selectSturgeon").on("change", function(d) {
+            var selectedOption = d3.select(this).property("value")
+            var selectedSturgeonDetail = detailData.filter(obs => obs.Sturgeon_ID === selectedOption)[0];
+            updateSidebar(selectedSturgeonDetail);
+        });
+
 
         function singleAnimation(d) {
 
