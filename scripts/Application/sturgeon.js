@@ -1,0 +1,420 @@
+// Setup dimensions (Match the PNG aspect ratio)
+const width = 1280;
+const height = 810;
+
+// Define the geogrpahic bounds of the PNG (decimal degrees)
+const imageBounds = [
+    [-77.5994421, 37.6184908], // [Long, Lat] of top-left
+    [-76.5776466, 37.1045584] // [Long, Lat] of bottom-right
+];
+
+// Initialize the SVG and Projection
+const svg = d3.select("#map-container")
+    .append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("width", "100%")
+    .attr("height", "auto");
+
+const projection = d3.geoMercator()
+    .fitExtent([[0, 0], [width, height]], {
+        type: "MultiPoint",
+        coordinates: imageBounds
+    });
+
+// Create a scale for circle size
+const radiusScale = d3.scaleSqrt().range([1,40]);
+
+// Initialize tooltip
+var tooltip = d3.select("#tooltip");
+
+// Load the CSV
+
+var hubConverter = function(d) {
+    return {
+        Hub_ID: d.Hub_ID,
+        Sturgeon_Count: parseFloat(d.Sturgeon_Count),
+        Hub_Latitude: parseFloat(d.Hub_Latitude),
+        Hub_Longitude: parseFloat(d.Hub_Longitude)
+    };
+};
+
+var detailConverter = function(d) {
+    return {
+        Sturgeon_ID: d.Sturgeon_ID,
+        Sturgeon_Name: d.Sturgeon_Name,
+        Sex: d.Sex,
+        Fork_Length: d.Fork_Length,
+        Fork_Length_2: d.Fork_Length_2,
+        Date_Tagged: d.Date_Tagged
+    }
+};
+
+var movementConverter = function(d) {
+    return {
+        Sturgeon_ID: d.Sturgeon_ID,
+        Date_Time_Rounded: d.Date_Time_Rounded,
+        Hub_ID: d.Hub_ID,
+        Arrival_Time: d.Arrival_Time,
+        Distinct_Hubs: d.Distinct_Hubs,
+        Tie_Breaker: d.Tie_Breaker
+    }
+}
+
+d3.queue()
+    .defer(d3.csv, "../../data/Hub_Summary.csv", hubConverter)
+    .defer(d3.csv, "../../data/Sturgeon_Details.csv", detailConverter)
+    .defer(d3.csv, "../../data/Sturgeon_Movement.csv", movementConverter)
+    .await(function(error, hubData, detailData, movementData) {
+
+        if (error) throw error;
+
+        radiusScale.domain([0, d3.max(hubData, d => d.Sturgeon_Count)]);
+        sexColorScale = d3.scaleOrdinal()
+            .domain(["Male", "Female", "Unknown"])
+            .range(["#66C2A5", "#F46D43", "#cccccc"]);
+
+        // Draw the basemap image first
+        svg.append("image")
+            .attr("xlink:href", "../../data/Basemap.png")
+            .attr("width", width)
+            .attr("height", height)
+            .on("click", function() {
+                // Reset everything when clicking the background
+                circles.transition().duration(500)
+                    .attr("r", d => radiusScale(d.Sturgeon_Count))
+                    .style("opacity", 0.7);
+                //svg.selectAll(".hub").remove();
+                svg.selectAll(".sturgeon-detail").remove()
+                svg.selectAll(".ping-traveler").remove()
+                svg.selectAll(".time-traveler").remove()
+                svg.selectAll(".time-circle").remove();
+            });
+        
+        // Create Sturgeon List
+        var sturgeonList = detailData.map(a => a.Sturgeon_ID);
+        
+        d3.select("#selectSturgeon")
+            .selectAll('option')
+            .data(sturgeonList)
+            .enter()
+            .append('option')
+            .text(function (d) {return d; })
+            .attr("value", function (d) { return d; });
+
+        d3.select("#selectSturgeon").on("change", function(d) {
+            var selectedOption = d3.select(this).property("value")
+            var selectedSturgeonDetail = detailData.filter(obs => obs.Sturgeon_ID === selectedOption)[0];
+            updateSidebar(selectedSturgeonDetail);
+        });
+
+
+        function singleAnimation(d) {
+
+            // Filter dataset based on selected sturgeon ID
+            const timelapseData = movementData.filter(obs => obs.Sturgeon_ID === d.Sturgeon_ID);
+
+            // Join filtered data to hub data, so that each observation is associated with the Hub's lat/long data
+            const timelapseWithCoords = timelapseData.map(function(e) {
+                const hub = hubData.find(h => h.Hub_ID === e.Hub_ID) || {};
+                e.Date_Time_Rounded = new Date(e.Date_Time_Rounded); // update from string to DateTime 
+                return { ...e, ...hub };
+            }).sort((a, b) => new Date(a.Date) - new Date(b.date));
+
+            // Prepare map for timelapse animation
+            svg.selectAll(".ping-traveler").remove(); // clean up old animations
+            svg.selectAll(".time-traveler").remove();
+            svg.selectAll(".sturgeon-detail").remove(); // remove sturgeon-detail rings for a clean animation
+            svg.selectAll(".time-circle").remove(); // remove old slider
+            svg.selectAll(".hub").transition()
+                .duration(100)
+                .attr("r", 3)
+                .style("fill", "#ABDDA4"); // remove old hubs
+
+            // Styling Text Varialbe
+            const textX = 380; // x position
+            const textY = 70; // y position
+
+            // Date Formatting for Time Series
+            const monthList = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            const firstTime = timelapseWithCoords[0].Date_Time_Rounded;
+            const dayOfMonth = firstTime.getDate();
+            const month = monthList[firstTime.getMonth()];
+            const year = firstTime.getFullYear();
+            const hour = firstTime.getHours();
+            const dateString = month + " " + dayOfMonth + ", " + year + "<br>" + hour + ":00";
+            
+            // Initialize Text Variable
+            const textTime = svg.append("text")
+                .attr("class", "time-traveler")
+                .text(dateString)
+                .attr("x", textX)
+                .attr("y", textY);
+
+            // Styling Map Animation
+            const pointerFillColor = "#3288BD";
+            const pointerStrokeColor = "#3288BD";
+            const pointerFillOpacity = .3
+            const pointerStrokeWidth = 3
+            
+            // Initialize the traveler variables - setting starting style characteristics and first lat/long location. 
+            // It's possible this is null in the beginning, if a ping was not recognized at the start of our time series.
+            const traveler = svg.append("circle")
+                .attr("class", "ping-traveler")
+                .attr("r", 10)
+                .style("fill", pointerFillColor)
+                .style("fill-opacity", pointerFillOpacity)
+                .style("stroke", pointerStrokeColor)
+                .style("stroke-width", pointerStrokeWidth)
+                .attr("cx", projection([timelapseWithCoords[0].Hub_Longitude, timelapseWithCoords[0].Hub_Latitude])[0])
+                .attr("cy", projection([timelapseWithCoords[0].Hub_Longitude, timelapseWithCoords[0].Hub_Latitude])[1]);
+
+            // Initialize the transitionChain variable - this will be written over in the following forEach loop, allowing
+            // a new animation to be dispalyed
+            let transitionChain = traveler;
+            let textTransition = textTime;
+    
+            timelapseWithCoords.forEach((pos, index) => {
+                // We've already initialized and animated the first index of our array, so skipping here
+                if (index === 0) return;
+
+                // Transition parameters
+                var transition1Length = 50;
+                var transition2Length = 400;
+                var transition3Length = 200;
+
+                const easing1 = d3.easeLinear;
+                const easing2 = d3.easeCircleOut;
+                const easing3 = d3.easeLinear;
+
+                // Styling parameters
+                var pointerSmall = 5;
+                var pointerLarge = 25;
+
+                // We are looping through each element of our datetime array. We want to check if a datetime element contains
+                // a lat/long location. If so, we want to animate it.
+                const hasCoords = pos.Hub_Longitude !== null && pos.Hub_Latitude != null;
+                const printTime = pos.Date_Time_Rounded;
+
+                const dayOfMonth = printTime.getDate();
+                const month = monthList[printTime.getMonth()];
+                const year = printTime.getFullYear();
+                const hour = printTime.getHours();
+                const printDateString = month + " " + dayOfMonth + ", " + year + " " + hour + ":00";
+
+                if (pos.Distinct_Hubs > 1) {
+                    transition1Length = transition1Length / pos.Distinct_Hubs;
+                    transition2Length = transition2Length / pos.Distinct_Hubs;
+                    transition3Length = transition3Length / pos.Distinct_Hubs;
+                }
+
+                // If we found coordinates for the selected date time, we update the animation
+                if (hasCoords) {
+                    const [nextX, nextY] = projection([pos.Hub_Longitude, pos.Hub_Latitude]);
+                    const pingCount = pos.NumberPings; // Not currently used, but we could animate size of ping based on number of pings in interval
+
+                    transitionChain = transitionChain
+                        // Transition 1: Move pointer to hub location
+                        .transition()
+                        .duration(transition1Length)
+                        .ease(easing1)
+                        .style("opacity", 0)
+                        .attr("cx", nextX)
+                        .attr("cy", nextY)
+                        .attr("r", pointerSmall)
+
+                        // Transition 2: Increase radius size
+                        .transition()
+                        .duration(transition2Length)
+                        .ease(easing2)
+                        .style("opacity", 1)
+                        .attr("r", pointerLarge)
+                        
+                        // Transition 3: Fade to transparent
+                        .transition()
+                        .duration(transition3Length)
+                        .ease(easing3)
+                        .style("opacity", 0);
+                    
+                    textTransition = textTransition
+                        // Transition 1: No change, filling time
+                        .transition()
+                        .duration(transition1Length)
+                        .ease(easing1)
+                        
+                        // Transition 2: Display timestamp in sync with map animation
+                        .transition()
+                        .duration(transition2Length)
+                        .ease(easing2)
+                        .text(printDateString)
+                        
+                        // Transition 3: No change, filling time
+                        .transition()
+                        .duration(transition3Length)
+                        .ease(easing3)
+                        .style("opacity", 1);
+                
+                // If coordinates were not found for the selected datetime, we do not animate this datetime value.
+                } else {
+                    transitionChain = transitionChain.transition()
+                        .duration(transition1Length + transition2Length + transition3Length)
+                        .style("opacity", 0);
+                    
+                    textTransition = textTransition.transition()
+                        .duration(transition1Length + transition2Length + transition3Length)
+                        .text(printDateString)
+                        .style("opacity", 1);
+                }
+            });
+        }
+
+        // Function to update the sidebar when an individual sturgeon is selected
+        function updateSidebar(detailID) {
+            const sidebar = d3.select(".sidebar");
+
+            const sidebarText = sidebar.html(`
+                <div class="sidebar-details">
+                    <h2> Sturgeon Detail </h2>
+                    <p><strong>Name:</strong> ${detailID.Sturgeon_Name}</p>
+                    <p><strong>ID:</strong> ${detailID.Sturgeon_ID}</p>
+                    <p><strong>Sex:</strong> ${detailID.Sex}</p>
+                    <p><strong>Fork Length:</strong> ${detailID.Fork_Length}</p>
+                    <p><strong>Date Tagged:</strong> ${detailID.Date_Tagged}</p>
+                    <button id="play-button" type="button">Play timelapse!</button>
+                </div>
+            `);
+
+            const button = d3.select("#play-button");
+
+            button.on("click", function() {
+                singleAnimation(detailID);
+            });
+
+        };
+
+        // Function to style circle when indivdual sturgeon is selected
+        function handleDetailClick(d, i, nodes) {
+            // 'd' is the detail data
+            d3.event.stopPropagation();
+
+            // Update Sidebar - calls function to add sturgeon details to sidebar
+            updateSidebar(d);
+
+            // Update fade all other sturgeon circles
+            d3.selectAll(".sturgeon-detail")
+                .transition().duration(500)
+                .style("opacity", 0.6)
+                .attr("r", 6);
+
+            // Increase size and opacity for selected sturgeon.
+            d3.select(nodes[i])
+                .raise()
+                .transition().duration(500)
+                .style("opacity", 1)
+                .attr("r", 12);
+        };
+        
+        // Draw Hubs
+        var circles = svg.selectAll(".hub")
+            .data(hubData)
+            .enter()
+            .append("circle")
+            .attr("class", "hub")
+            .attr("cx", function(d) {
+                // projection() retunrs [x,y]
+                return projection([d.Hub_Longitude, d.Hub_Latitude])[0];
+            })
+            .attr("cy", function(d) {
+                return projection([d.Hub_Longitude, d.Hub_Latitude])[1];
+            })
+            .attr("r", function(d) {
+                return radiusScale(d.Sturgeon_Count);
+            })
+            .attr("fill", "#ABDDA4") 
+            .attr("stroke", "white")
+            .attr("stroke-width", 2)
+            .attr("opacity", 0.7)
+            .on("mouseover", function(d) {
+                tooltip.style("opacity", 1)
+                    .html("<strong>" + d.Hub_ID + "</strong><br/>Sturgeon Count: " + d.Sturgeon_Count);
+            })
+            .on("mousemove", function(d) {
+                tooltip.style("left", (d3.event.pageX + 15) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function() {
+                tooltip.style("opacity", 0);
+            })
+            .on("click", function(d) {
+
+                const clickedHubName = d.Hub_ID;
+                const hubX = projection([d.Hub_Longitude, d.Hub_Latitude])[0];
+                const hubY = projection([d.Hub_Longitude, d.Hub_Latitude])[1];
+
+                // Fade other hubs and details
+                circles
+                    .transition()
+                    .duration(500)
+                    .style("opacity", 0.3)
+                    .attr("r", 10);
+                svg.selectAll(".sturgeon-detail").remove();
+
+                // Filter details data
+                const allObservations = movementData.filter(obs => obs.Hub_ID === clickedHubName);
+                const uniqueMap = new Map(allObservations.map(obs => [obs.Sturgeon_ID, obs]));
+                const matches = Array.from(uniqueMap.values());
+                const tempDetails = detailData;
+                let merged = tempDetails.filter(e => matches.some(f => f.Sturgeon_ID == e.Sturgeon_ID));
+                merged = _.merge(merged, matches);
+
+                const burstGroup = svg.append("g").attr("class", "burst-layer");
+
+                // Clear and previous detail points
+                burstGroup.selectAll(".sturgeon-detail").remove();
+
+                // Create the burst
+                const detailCircles = burstGroup.selectAll(".sturgeon-detail")
+                    .data(merged)
+                    .enter()
+                    .append("circle")
+                    .attr("class", "sturgeon-detail")
+                    .attr("cx", hubX) // Start at Hub
+                    .attr("cy", hubY)
+                    .attr("r", 0)
+                    .attr("fill", d => sexColorScale(d.Sex))
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 0.5)
+                    .on("mouseover", function(d) {
+                        tooltip.style("opacity", 1)
+                            .html("<strong>" + d.Sturgeon_ID + "</strong><br/>Sex: " + d.Sex);
+                        })
+                    .on("mousemove", function(d) {
+                        tooltip.style("left", (d3.event.pageX + 15) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                        })
+                    .on("mouseout", function() {
+                        tooltip.style("opacity", 0)
+                        })
+                    .on("click", handleDetailClick)
+                    .transition()
+                    .duration(800)
+                    .delay((d, i) => i * 30) 
+                    .attr("cx", function(d, i) {
+                        // Function for ring burst appearance
+                        const ringIndex = Math.floor(i/10);
+                        const posOnRing = i % 10;
+                        const radius = 40 + (ringIndex * 25);
+                        const angle = (posOnRing / 10) * (2 * Math.PI);
+                        return hubX + radius * Math.cos(angle);
+                    })
+                    .attr("cy", function(d, i) {
+                        // Function for ring burst appearance
+                        const ringIndex = Math.floor(i/10);
+                        const posOnRing = i % 10;
+                        const radius = 40 + (ringIndex * 25);
+                        const angle = (posOnRing / 10) * (2 * Math.PI);
+                        return hubY + radius * Math.sin(angle);
+                    })
+                    .attr("r", 8);
+
+    });
+});
