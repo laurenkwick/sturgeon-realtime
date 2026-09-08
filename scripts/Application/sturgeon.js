@@ -22,7 +22,7 @@ const projection = d3.geoMercator()
     });
 
 // Create a scale for circle size
-const radiusScale = d3.scaleSqrt().range([5,30]);
+const radiusScale = d3.scaleSqrt().range([5,50]);
 
 // Initialize tooltip
 var tooltip = d3.select("#tooltip");
@@ -71,7 +71,7 @@ d3.queue()
         radiusScale.domain([0, d3.max(hubData, d => d.Sturgeon_Count)]);
         sexColorScale = d3.scaleOrdinal()
             .domain(["Male", "Female", "Unknown"])
-            .range(["#00d4ff", "#ff00dd", "#cccccc"]);
+            .range(["#66C2A5", "#F46D43", "#cccccc"]);
 
         // Draw the basemap image first
         svg.append("image")
@@ -110,7 +110,7 @@ d3.queue()
             svg.selectAll(".hub").transition()
                 .duration(100)
                 .attr("r", 3)
-                .style("fill", "red"); // remove old hubs
+                .style("fill", "#ABDDA4"); // remove old hubs
 
             // Styling Text Varialbe
             const textX = 380; // x position
@@ -133,8 +133,8 @@ d3.queue()
                 .attr("y", textY);
 
             // Styling Map Animation
-            const pointerFillColor = "#31688E";
-            const pointerStrokeColor = "#31688E";
+            const pointerFillColor = "#3288BD";
+            const pointerStrokeColor = "#3288BD";
             const pointerFillOpacity = .3
             const pointerStrokeWidth = 3
             
@@ -253,8 +253,8 @@ d3.queue()
         function updateSidebar(detailID) {
             const sidebar = d3.select(".sidebar");
 
-            sidebar.html(`
-                <div style="padding: 20px;">
+            const sidebarText = sidebar.html(`
+                <div class="sidebar-details">
                     <h2> Sturgeon Detail </h2>
                     <p><strong>Name:</strong> ${detailID.Sturgeon_Name}</p>
                     <p><strong>ID:</strong> ${detailID.Sturgeon_ID}</p>
@@ -285,14 +285,14 @@ d3.queue()
             d3.selectAll(".sturgeon-detail")
                 .transition().duration(500)
                 .style("opacity", 0.6)
-                .attr("r", 3);
+                .attr("r", 6);
 
             // Increase size and opacity for selected sturgeon.
             d3.select(nodes[i])
                 .raise()
                 .transition().duration(500)
                 .style("opacity", 1)
-                .attr("r", 8);
+                .attr("r", 12);
         };
         
         // Draw Hubs
@@ -311,12 +311,13 @@ d3.queue()
             .attr("r", function(d) {
                 return radiusScale(d.Sturgeon_Count);
             })
-            .attr("fill", "rgba(255, 60, 0, 0.7)") // NYT Red-ish
+            .attr("fill", "#ABDDA4") 
             .attr("stroke", "white")
-            .attr("stroke-width", 1)
+            .attr("stroke-width", 2)
+            .attr("opacity", 0.7)
             .on("mouseover", function(d) {
                 tooltip.style("opacity", 1)
-                    .html("<strong>" + d.Hub_ID + "</strong><br/>Count: " + d.Sturgeon_Count);
+                    .html("<strong>" + d.Hub_ID + "</strong><br/>Sturgeon Count: " + d.Sturgeon_Count);
             })
             .on("mousemove", function(d) {
                 tooltip.style("left", (d3.event.pageX + 15) + "px")
@@ -332,7 +333,11 @@ d3.queue()
                 const hubY = projection([d.Hub_Longitude, d.Hub_Latitude])[1];
 
                 // Fade other hubs and details
-                circles.transition().duration(500).style("opacity", 0.3);
+                circles
+                    .transition()
+                    .duration(500)
+                    .style("opacity", 0.3)
+                    .attr("r", 10);
                 svg.selectAll(".sturgeon-detail").remove();
 
                 // Filter details data
@@ -358,7 +363,7 @@ d3.queue()
                     .attr("cy", hubY)
                     .attr("r", 0)
                     .attr("fill", d => sexColorScale(d.Sex))
-                    .attr("stroke", "black")
+                    .attr("stroke", "white")
                     .attr("stroke-width", 0.5)
                     .on("mouseover", function(d) {
                         tooltip.style("opacity", 1)
@@ -379,7 +384,7 @@ d3.queue()
                         // Function for ring burst appearance
                         const ringIndex = Math.floor(i/10);
                         const posOnRing = i % 10;
-                        const radius = 30 + (ringIndex * 15);
+                        const radius = 40 + (ringIndex * 25);
                         const angle = (posOnRing / 10) * (2 * Math.PI);
                         return hubX + radius * Math.cos(angle);
                     })
@@ -387,11 +392,11 @@ d3.queue()
                         // Function for ring burst appearance
                         const ringIndex = Math.floor(i/10);
                         const posOnRing = i % 10;
-                        const radius = 30 + (ringIndex * 15);
+                        const radius = 40 + (ringIndex * 25);
                         const angle = (posOnRing / 10) * (2 * Math.PI);
                         return hubY + radius * Math.sin(angle);
                     })
-                    .attr("r", 4);
+                    .attr("r", 8);
 
     });
 });
