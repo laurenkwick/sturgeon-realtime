@@ -1,11 +1,15 @@
 // Setup dimensions (Match the PNG aspect ratio)
-const width = 1280;
-const height = 810;
+//const width = 1280;
+//const height = 810;
+const width = 1920;
+const height = 1080;
 
 // Define the geogrpahic bounds of the PNG (decimal degrees)
 const imageBounds = [
-    [-77.5994421, 37.6184908], // [Long, Lat] of top-left
-    [-76.5776466, 37.1045584] // [Long, Lat] of bottom-right
+    //[-77.5994421, 37.6184908], // [Long, Lat] of top-left
+    //[-76.5776466, 37.1045584] // [Long, Lat] of bottom-right
+    [-77.6258622, 37.6274012],
+    [-76.3298167,  37.0480142]
 ];
 
 // Initialize the SVG and Projection
@@ -71,11 +75,11 @@ d3.queue()
         radiusScale.domain([0, d3.max(hubData, d => d.Sturgeon_Count)]);
         sexColorScale = d3.scaleOrdinal()
             .domain(["Male", "Female", "Unknown"])
-            .range(["#66C2A5", "#F46D43", "#cccccc"]);
+            .range(["#88B5BD", "#b0413e", "#cccccc"]);
 
         // Draw the basemap image first
         svg.append("image")
-            .attr("xlink:href", "../../data/Basemap.png")
+            .attr("xlink:href", "../../data/Newspaper_MinimalText_20260918_JPEG_V03.jpg")
             .attr("width", width)
             .attr("height", height)
             .on("click", function() {
@@ -127,8 +131,8 @@ d3.queue()
             svg.selectAll(".time-circle").remove(); // remove old slider
             svg.selectAll(".hub").transition()
                 .duration(100)
-                .attr("r", 3)
-                .style("fill", "#ABDDA4"); // remove old hubs
+                .attr("r", 6)
+                .style("fill", "#BB9F06"); // remove old hubs
 
             // Styling Text Varialbe
             const textX = 380; // x position
@@ -151,10 +155,10 @@ d3.queue()
                 .attr("y", textY);
 
             // Styling Map Animation
-            const pointerFillColor = "#3288BD";
-            const pointerStrokeColor = "#3288BD";
-            const pointerFillOpacity = .3
-            const pointerStrokeWidth = 3
+            const pointerFillColor = "#BB9F06";
+            const pointerStrokeColor = "#BB9F06";
+            const pointerFillOpacity = .7
+            const pointerStrokeWidth = 5
             
             // Initialize the traveler variables - setting starting style characteristics and first lat/long location. 
             // It's possible this is null in the beginning, if a ping was not recognized at the start of our time series.
@@ -269,10 +273,10 @@ d3.queue()
 
         // Function to update the sidebar when an individual sturgeon is selected
         function updateSidebar(detailID) {
-            const sidebar = d3.select(".sidebar");
+            const sidebar = d3.select(".card");
 
             const sidebarText = sidebar.html(`
-                <div class="sidebar-details">
+                <div id="card-content">
                     <h2> Sturgeon Detail </h2>
                     <p><strong>Name:</strong> ${detailID.Sturgeon_Name}</p>
                     <p><strong>ID:</strong> ${detailID.Sturgeon_ID}</p>
@@ -329,8 +333,8 @@ d3.queue()
             .attr("r", function(d) {
                 return radiusScale(d.Sturgeon_Count);
             })
-            .attr("fill", "#ABDDA4") 
-            .attr("stroke", "white")
+            .attr("fill", "#BB9F06") 
+            .attr("stroke", "#BB9F06")
             .attr("stroke-width", 2)
             .attr("opacity", 0.7)
             .on("mouseover", function(d) {
@@ -354,8 +358,8 @@ d3.queue()
                 circles
                     .transition()
                     .duration(500)
-                    .style("opacity", 0.3)
-                    .attr("r", 10);
+                    .style("opacity", 0.7)
+                    .attr("r", 6);
                 svg.selectAll(".sturgeon-detail").remove();
 
                 // Filter details data
@@ -381,8 +385,9 @@ d3.queue()
                     .attr("cy", hubY)
                     .attr("r", 0)
                     .attr("fill", d => sexColorScale(d.Sex))
-                    .attr("stroke", "white")
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke", d => sexColorScale(d.Sex))
+                    .style("stroke-width", 3)
+                    .style("fill-opacity", 0.90)
                     .on("mouseover", function(d) {
                         tooltip.style("opacity", 1)
                             .html("<strong>" + d.Sturgeon_ID + "</strong><br/>Sex: " + d.Sex);

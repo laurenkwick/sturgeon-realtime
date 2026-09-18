@@ -2,57 +2,114 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<title>D3 interactive sturgeon map</title>
+		<title>Atlantic Sturgeon Real-Time Tracker</title>
 		<script type="text/javascript" src="../../d3.js"></script>
 		<script type="text/javascript" src="../../lodash.js"></script>
 		<style>
-			/*Optional: Centers the map on the page*/
-			body { font-family: sans-serif; }
-			#map-container { 
+			* {
+				box-sizing: border-box;
+			}
+
+			body, html { 
+				margin: 0;
+				padding: 0;
 				width: 100%;
-				max-width: 1280px;
-				margin: 0 auto;
-				line-height: 0;
+				height: 100%;
+				font-family: sans-serif; 
+				overflow: hidden; /* Prevents page scrollbars */
 			}
-			#tooltip {
-				position: absolute;
-				padding: 8px;
-				background: white;
-				border: 1px solid #ccc;
-				pointer-events: none; /* Crucial: clicks pass through to circles */
-				opacity: 0;
-				font-size: 12px;
-				box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
-			}
-			circle:hover { fill: orange; cursor: pointer; }
+
+			/* Container takes up entire screen and acts as positioning anchor */
 			.container {
-				display: flex;
-				width: 100%;
-			}
-			.sidebar {
-				position: sticky;
-				top: 0;
+				position: relative;
+				width: 100vw;
 				height: 100vh;
-				width: 300px;
-				min-width: 200px; /* Prevents sidebar from shrinking when window size changes */
-				background-color: #f8f8f8;
-				border-right: 1px solid #ddd;
-				z-index: 10;
-			}
-
-			.sidebar-details {
-				padding: 20px;
-				font-family: "candara", sans-serif;
-				font-weight: 400;
-			}
-
-			.content {
-				flex: 1;
-				overflow-x: auto; /* Adds a scrollbar only to the map area if it's too wide */
 				display: flex;
 				justify-content: center;
 				align-items: center;
+				background-color: #e1e1dd;
+				overflow: hidden;
 			}
+
+			/* Map area fills the container while maintaining 1920 x 1080 bounds */
+			.content {
+				width: 100%;
+				height: 100%;
+				max-width: 1920px;
+				max-height: 1080px;
+				position: relative;
+				line-height: 0;
+			}
+
+			/* Ensure any PNG or SVG map fills the container properly */
+			#map-container { 
+				width: 100%;
+				height: 100%;
+				max-width: 100vw;
+				max-height: 100vh;
+				aspect-ratio: 16 / 9; /* Matches your 1920x1080 resolution */
+				position: relative;
+				line-height: 0;
+				object-fit: contain;
+			}
+
+			/* Floating Card */
+			.card {
+                position: absolute;
+                top: 24px;
+                right: 24px;
+                width: 320px; /* ~1/8th scale relative to screen width */
+                max-height: calc(100% - 48px);
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(8px); /* Modern blurred background effect */
+                border-radius: 10px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+                border: 1px solid rgba(220, 220, 220, 0.8);
+                z-index: 20;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                overflow-y: auto;
+            }
+
+			/* Dropdown styling inside card */
+			#selectSturgeon {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+                border-radius: 6px;
+                border: 1px solid #ccc;
+                background-color: #fff;
+                cursor: pointer;
+            }
+
+			.card-details {
+				font-family: "candara", sans-serif;
+				font-weight: 400;
+				color: #333;
+				line-height: 1.5;
+			}
+
+			#tooltip {
+                position: absolute;
+                padding: 8px;
+                background: white;
+                border: 1px solid #ccc;
+                pointer-events: none; /* Crucial: clicks pass through to map elements */
+                opacity: 0;
+                font-size: 12px;
+                border-radius: 4px;
+				line-height: 1.4;
+                box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+                z-index: 30;
+            }
+			
+			circle:hover { 
+				fill: #BB9F06; 
+				cursor: pointer; 
+			}
+			
 			text {
 				font-family: candara, sans-serif;
 				font-size: 52px;
@@ -62,16 +119,27 @@
 		</style>
 	</head>
 	<body>
-		<select id="selectSturgeon"></select>
-		<div class="container">
-			<div class="sidebar">
-			</div>
+        <div class="container">
+            <!-- Main Content (Map) -->
+            <main class="content">
+                <div id="map-container">
+                    <!-- Your 1920x1080 PNG or SVG map image goes here -->
+                </div>
+                <div id="tooltip"></div>
+            </main>
 
-			<main class="content">
-				<div id="map-container"></div>
-				<div id="tooltip"></div>
-			</main>
-		</div>
-				<script type="text/javascript" src="sturgeon.js"></script>
-	</body>
+            <!-- Floating Overlay Card -->
+            <div class="card">
+                <select id="selectSturgeon">
+                    <!-- Options populated by sturgeon.js -->
+                </select>
+                
+                <div class="card-details" id="card-content">
+                    <!-- D3 / JS will inject content here -->
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="sturgeon.js"></script>
+    </body>
 </html>
