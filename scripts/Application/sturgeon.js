@@ -48,8 +48,10 @@ var detailConverter = function(d) {
         Sturgeon_Name: d.Sturgeon_Name,
         Sex: d.Sex,
         Fork_Length: d.Fork_Length,
-        Fork_Length_2: d.Fork_Length_2,
-        Date_Tagged: d.Date_Tagged
+        Total_Length: d.Total_Length,
+        Date_Tagged: d.Date_Tagged,
+        Location_Tagged: d.Location_Tagged,
+        Season: d.Season
     }
 };
 
@@ -278,12 +280,16 @@ d3.queue()
             cardContent.html(`
                 <div id="card-content">
                     <h2> Sturgeon Details</h2>
-                    <p>${detailID.Sturgeon_Name} is a ${detailID.Sex} sturgeon that was captured and tagged on
-                       ${detailID.Date_Tagged} in the tagged location. ${detailID.Sturgeon_Name} spawns in the 
-                       season.</p>
+                    <p>
+                        <strong>${detailID.Sturgeon_Name}</strong> is a <strong>${detailID.Sex}</strong> sturgeon that was captured and tagged on
+                       <strong>${detailID.Date_Tagged}</strong> in the <strong>${detailID.Location_Tagged}</strong>.
+                    </p>
+                    <p>
+                        <strong>${detailID.Sturgeon_Name}</strong> spawns in the <strong>${detailID.Season}</strong>.
+                    </p>
                     <ul>
-                        <li>Fork Length: ${detailID.Fork_Length}</li>
-                        <li>Total Length: Placeholder</li>
+                        <li>Fork Length: ${detailID.Fork_Length} meters</li>
+                        <li>Total Length: ${detailID.Total_Length} meters</li>
                     </ul>
                     <button id="play-button">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
