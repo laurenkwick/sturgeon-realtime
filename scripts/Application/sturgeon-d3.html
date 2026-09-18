@@ -50,7 +50,6 @@
 				aspect-ratio: 16 / 9; /* Matches your 1920x1080 resolution */
 				position: relative;
 				line-height: 0;
-				object-fit: contain;
 			}
 
 			/* Floating Card */
@@ -104,6 +103,53 @@
                 box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
                 z-index: 30;
             }
+
+			/* Modern Play Button Styling */
+			#play-button {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				gap: 8px;
+				width: 100%;
+				margin-top: 16px;
+				padding: 12px 20px;
+				
+				/* Modern Colors & Gradient */
+				background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+				color: #ffffff;
+				font-family: inherit;
+				font-size: 14px;
+				font-weight: 600;
+				letter-spacing: 0.3px;
+				
+				/* Border & Shadow */
+				border: none;
+				border-radius: 8px;
+				cursor: pointer;
+				box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+				
+				/* Smooth Animation */
+				transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+			}
+
+			/* Hover State - Lift and Enhance Glow */
+			#play-button:hover {
+				background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+				box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+				transform: translateY(-1px);
+			}
+
+			/* Active Press State */
+			#play-button:active {
+				transform: translateY(0);
+				box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+			}
+
+			/* Accessibility Focus Ring */
+			#play-button:focus-visible {
+				outline: 2px solid #2563eb;
+				outline-offset: 2px;
+			}
 			
 			circle:hover { 
 				fill: #BB9F06; 
@@ -130,6 +176,7 @@
 
             <!-- Floating Overlay Card -->
             <div class="card">
+				<h2>Sturgeon Selection</h2>
                 <select id="selectSturgeon">
                     <!-- Options populated by sturgeon.js -->
                 </select>

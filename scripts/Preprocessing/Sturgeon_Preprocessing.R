@@ -2,6 +2,7 @@ library(dplyr)
 library(sf)
 library(lubridate)
 library(tidyr)
+library(stringr)
 
 #################
 ### READ DATA ###
@@ -76,7 +77,7 @@ sturgeon_movement <- sturgeon_summary %>%
   ) %>%
   mutate(
     Date_Time_Rounded = format(Date_Time_Rounded, "%Y-%m-%d %H:%M:%S")
-  )
+  ) %>%
   select(Sturgeon_ID, Date_Time_Rounded, Hub_ID, Arrival_Time, Distinct_Hubs, Tie_Breaker)
 
 ##############################
@@ -103,14 +104,28 @@ hub_summary <- hub_summary %>%
 sturgeon_details <- sturgeon %>%
   group_by(ID) %>%
   summarize(
-    Sturgeon_Name = first(Animal.Friendly.Name),
+    Sturgeon_Name = first(gsub("[\\(\\)]", "", regmatches(Animal.Friendly.Name, gregexpr("\\(.*?\\)", Animal.Friendly.Name))[[1]])),
     Fork_Length = first(Animal.Length..m.),
-    Fork_Length_2 = first(Animal.Length2..m.),
+    Total_Length = first(Animal.Length2..m.),
     Sex = first(Animal.Sex),
-    Date_Tagged = first(Release.Date.and.Time..UTC.)
+    Date_Tagged = first(as.Date(Release.Date.and.Time..UTC.)),
+    Location_Tagged = first(Release.Location),
+    Season = first(str_to_title(sub('(^\\w+)\\s.+','\\1', Comment)))
   ) %>%
   rename(
     Sturgeon_ID = ID
+  ) %>%
+  mutate(
+    Sturgeon_Name = case_when(is.na(Sturgeon_Name) ~ paste0("Sturgeon ID ", Sturgeon_ID),
+                              !is.na(Sturgeon_Name) ~ Sturgeon_Name),
+    Location_Tagged = case_when(Location_Tagged == "" ~ "Unknown Location",
+                                Location_Tagged != "" ~ Location_Tagged),
+    Season = case_when(Season == "" ~ "Unknown Season",
+                       Season != "" ~ Season),
+    Fork_Length = case_when(Fork_Length > 20 ~ 0.01 * Fork_Length,
+                            Fork_Length <= 20 ~ Fork_Length),
+    Total_Length = case_when(Total_Length > 20 ~ 0.01 * Total_Length,
+                             Total_Length <= 20 ~ Total_Length)
   )
 
 ##########################

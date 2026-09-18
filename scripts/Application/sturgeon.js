@@ -79,7 +79,7 @@ d3.queue()
 
         // Draw the basemap image first
         svg.append("image")
-            .attr("xlink:href", "../../data/Newspaper_MinimalText_20260918_JPEG_V03.jpg")
+            .attr("xlink:href", "../../data/Newspaper_MinimalText_20260918_V05.png")
             .attr("width", width)
             .attr("height", height)
             .on("click", function() {
@@ -135,8 +135,8 @@ d3.queue()
                 .style("fill", "#BB9F06"); // remove old hubs
 
             // Styling Text Varialbe
-            const textX = 380; // x position
-            const textY = 70; // y position
+            const textX = 670; // x position
+            const textY = 180; // y position
 
             // Date Formatting for Time Series
             const monthList = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -273,26 +273,30 @@ d3.queue()
 
         // Function to update the sidebar when an individual sturgeon is selected
         function updateSidebar(detailID) {
-            const sidebar = d3.select(".card");
+            const cardContent = d3.select("#card-content");
 
-            const sidebarText = sidebar.html(`
+            cardContent.html(`
                 <div id="card-content">
-                    <h2> Sturgeon Detail </h2>
-                    <p><strong>Name:</strong> ${detailID.Sturgeon_Name}</p>
-                    <p><strong>ID:</strong> ${detailID.Sturgeon_ID}</p>
-                    <p><strong>Sex:</strong> ${detailID.Sex}</p>
-                    <p><strong>Fork Length:</strong> ${detailID.Fork_Length}</p>
-                    <p><strong>Date Tagged:</strong> ${detailID.Date_Tagged}</p>
-                    <button id="play-button" type="button">Play timelapse!</button>
+                    <h2> Sturgeon Details</h2>
+                    <p>${detailID.Sturgeon_Name} is a ${detailID.Sex} sturgeon that was captured and tagged on
+                       ${detailID.Date_Tagged} in the tagged location. ${detailID.Sturgeon_Name} spawns in the 
+                       season.</p>
+                    <ul>
+                        <li>Fork Length: ${detailID.Fork_Length}</li>
+                        <li>Total Length: Placeholder</li>
+                    </ul>
+                    <button id="play-button">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        Play Animation
+                    </button>
                 </div>
             `);
 
-            const button = d3.select("#play-button");
-
-            button.on("click", function() {
+            d3.select("#play-button").on("click", function() {
                 singleAnimation(detailID);
-            });
-
+            })
         };
 
         // Function to style circle when indivdual sturgeon is selected
