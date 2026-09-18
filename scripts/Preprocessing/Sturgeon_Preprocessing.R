@@ -20,7 +20,7 @@ sturgeon <- sturgeon %>%
 ####################################
 
 # Set time window interval
-interval <- "4 hours"
+interval <- "24 hours"
 
 sturgeon_summary <- sturgeon %>%
   mutate(
