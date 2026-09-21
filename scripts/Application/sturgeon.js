@@ -81,19 +81,18 @@ d3.queue()
 
         // Draw the basemap image first
         svg.append("image")
-            .attr("xlink:href", "../../data/Newspaper_MinimalText_20260918_V05.png")
+            .attr("xlink:href", "../../data/Newspaper_MinimalText_20260921_V06.png")
             .attr("width", width)
             .attr("height", height)
-            .on("click", function() {
-                // Reset everything when clicking the background
-                circles.transition().duration(500)
-                    .attr("r", d => radiusScale(d.Sturgeon_Count))
-                    .style("opacity", 0.7);
-                //svg.selectAll(".hub").remove();
-                svg.selectAll(".sturgeon-detail").remove()
-                svg.selectAll(".ping-traveler").remove()
-                svg.selectAll(".time-traveler").remove()
-                svg.selectAll(".time-circle").remove();
+            .on("click", function() { 
+                svg.selectAll(".hub")
+                    .transition()
+                    .duration(500)
+                    .attr("r", d=> radiusScale(d.Sturgeon_Count));
+                svg.selectAll(".sturgeon-detail").remove();
+                svg.selectAll(".pings").remove();
+
+                graphic.removeClass('in-singular').addClass('in-cumulative');
             });
         
         // Create Sturgeon List
@@ -113,8 +112,13 @@ d3.queue()
             updateSidebar(selectedSturgeonDetail);
         });
 
+        var graphic = $('#the-graphic');
+
+        drawHubs();
 
         function singleAnimation(d) {
+            
+            graphic.removeClass('in-cumulative').addClass('in-singular');
 
             // Filter dataset based on selected sturgeon ID
             const timelapseData = movementData.filter(obs => obs.Sturgeon_ID === d.Sturgeon_ID);
@@ -127,10 +131,8 @@ d3.queue()
             }).sort((a, b) => new Date(a.Date) - new Date(b.date));
 
             // Prepare map for timelapse animation
-            svg.selectAll(".ping-traveler").remove(); // clean up old animations
-            svg.selectAll(".time-traveler").remove();
+            svg.selectAll(".pings").remove();
             svg.selectAll(".sturgeon-detail").remove(); // remove sturgeon-detail rings for a clean animation
-            svg.selectAll(".time-circle").remove(); // remove old slider
             svg.selectAll(".hub").transition()
                 .duration(100)
                 .attr("r", 6)
@@ -141,25 +143,20 @@ d3.queue()
             const textY = 180; // y position
 
             // Date Formatting for Time Series
-            const monthList = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            const monthList = ["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
+            const singularDateline = $('.singular-mode .dateline-date');
             const firstTime = timelapseWithCoords[0].Date_Time_Rounded;
             const dayOfMonth = firstTime.getDate();
             const month = monthList[firstTime.getMonth()];
             const year = firstTime.getFullYear();
-            const hour = firstTime.getHours();
-            const dateString = month + " " + dayOfMonth + ", " + year + "<br>" + hour + ":00";
-            
-            // Initialize Text Variable
-            const textTime = svg.append("text")
-                .attr("class", "time-traveler")
-                .text(dateString)
-                .attr("x", textX)
-                .attr("y", textY);
+        
+            const dateString = month + " " + dayOfMonth + ", " + year;
+            singularDateline.text(dateString);
 
             // Styling Map Animation
-            const pointerFillColor = "#BB9F06";
-            const pointerStrokeColor = "#BB9F06";
-            const pointerFillOpacity = .7
+            const pointerFillColor = "#b0413e";
+            const pointerStrokeColor = "#b0413e";
+            const pointerFillOpacity = .5
             const pointerStrokeWidth = 5
             
             // Initialize the traveler variables - setting starting style characteristics and first lat/long location. 
@@ -172,18 +169,26 @@ d3.queue()
             let cumulativeDelay = 0;
 
             timelapseWithCoords.forEach((pos, index) => {
+
                 const hasCoords = pos.Hub_Longitude !== null && pos.Hub_Latitude !== null;
 
                 // Base timings for this step
                 let expandDuration = 500;
-                let fadeDuration = 2000; // Increase fade time so it stays visible while next pings spawn
+                let fadeDuration = 1800; // Increase fade time so it stays visible while next pings spawn
                 let stepInterval = 1300;  // How long to wait BEFORE starting the next ping
 
                 if (pos.Distinct_Hubs > 1) {
-                    //expandDuration /= pos.Distinct_Hubs;
-                    //fadeDuration /= pos.Distinct_Hubs;
+                    // Dive timing of ping interval if multiple receivers visited in one day
                     stepInterval /= pos.Distinct_Hubs;
                 }
+
+                // Format time
+                const printTime = pos.Date_Time_Rounded;
+                const printDateString = `${monthList[printTime.getMonth()]} ${printTime.getDate()} ${printTime.getFullYear()}`;
+
+                d3.timeout(() => {
+                    singularDateline.text(printDateString);
+                }, cumulativeDelay);
 
                 if (hasCoords) {
                     const [x, y] = projection([pos.Hub_Longitude, pos.Hub_Latitude]);
@@ -206,139 +211,33 @@ d3.queue()
                         .duration(expandDuration)
                         .ease(d3.easeCircleOut)
                         .style("opacity", 1)
-                        .attr("r", 25)
+                        .attr("r", 35)
 
                         // Phase 2: Fade out slowly while next circles are already triggering
                         .transition()
                         .duration(fadeDuration)
                         .ease(d3.easeLinear)
                         .style("opacity", 0)
-                        .attr("r", 35) // Optional: continue slightly expanding as it fades
+                        .attr("r", 45) // Optional: continue slightly expanding as it fades
 
                         // Clean up node after animation finishes to prevent DOM bloat
                         .remove();
                 }
 
-                // 2. UPDATE TEXT TIMESTAMP INDEPENDENTLY
-                const printTime = pos.Date_Time_Rounded;
-                const printDateString = `${monthList[printTime.getMonth()]} ${printTime.getDate()}, ${printTime.getFullYear()} ${printTime.getHours()}:00`;
-
-                textTime.transition()
-                    .delay(cumulativeDelay)
-                    .duration(100)
-                    .text(printDateString);
-
-                // Advance the timeline by the step interval (NOT the full fade duration)
                 cumulativeDelay += stepInterval;
             });
-            /*
-            const traveler = svg.append("circle")
-                .attr("class", "ping-traveler")
-                .attr("r", 10)
-                .style("fill", pointerFillColor)
-                .style("fill-opacity", pointerFillOpacity)
-                .style("stroke", pointerStrokeColor)
-                .style("stroke-width", pointerStrokeWidth)
-                .attr("cx", projection([timelapseWithCoords[0].Hub_Longitude, timelapseWithCoords[0].Hub_Latitude])[0])
-                .attr("cy", projection([timelapseWithCoords[0].Hub_Longitude, timelapseWithCoords[0].Hub_Latitude])[1]);
 
-            // Initialize the transitionChain variable - this will be written over in the following forEach loop, allowing
-            // a new animation to be dispalyed
-            let transitionChain = traveler;
-            let textTransition = textTime;
-    
-            timelapseWithCoords.forEach((pos, index) => {
-                // We've already initialized and animated the first index of our array, so skipping here
-                if (index === 0) return;
+            // Bring up hub visual after animation is finished
+            svg.selectAll(".hub")
+                    .transition()
+                    .delay(cumulativeDelay)
+                    .duration(1000)
+                    .attr("r", d=> radiusScale(d.Sturgeon_Count));
 
-                // Transition parameters
-                var transition1Length = 50;
-                var transition2Length = 500;
-                var transition3Length = 800;
-
-                const easing1 = d3.easeLinear;
-                const easing2 = d3.easeCircleOut;
-                const easing3 = d3.easeLinear;
-
-                // Styling parameters
-                var pointerSmall = 5;
-                var pointerLarge = 25;
-
-                // We are looping through each element of our datetime array. We want to check if a datetime element contains
-                // a lat/long location. If so, we want to animate it.
-                const hasCoords = pos.Hub_Longitude !== null && pos.Hub_Latitude != null;
-                const printTime = pos.Date_Time_Rounded;
-
-                const dayOfMonth = printTime.getDate();
-                const month = monthList[printTime.getMonth()];
-                const year = printTime.getFullYear();
-                const hour = printTime.getHours();
-                const printDateString = month + " " + dayOfMonth + ", " + year + " " + hour + ":00";
-
-                if (pos.Distinct_Hubs > 1) {
-                    transition1Length = transition1Length / pos.Distinct_Hubs;
-                    transition2Length = transition2Length / pos.Distinct_Hubs;
-                    transition3Length = transition3Length / pos.Distinct_Hubs;
-                }
-
-                // If we found coordinates for the selected date time, we update the animation
-                if (hasCoords) {
-                    const [nextX, nextY] = projection([pos.Hub_Longitude, pos.Hub_Latitude]);
-                    const pingCount = pos.NumberPings; // Not currently used, but we could animate size of ping based on number of pings in interval
-
-                    transitionChain = transitionChain
-                        // Transition 1: Move pointer to hub location
-                        .transition()
-                        .duration(transition1Length)
-                        .ease(easing1)
-                        .style("opacity", 0)
-                        .attr("cx", nextX)
-                        .attr("cy", nextY)
-                        .attr("r", pointerSmall)
-
-                        // Transition 2: Increase radius size
-                        .transition()
-                        .duration(transition2Length)
-                        .ease(easing2)
-                        .style("opacity", 1)
-                        .attr("r", pointerLarge)
-                        
-                        // Transition 3: Fade to transparent
-                        .transition()
-                        .duration(transition3Length)
-                        .ease(easing3)
-                        .style("opacity", 0);
-                    
-                    textTransition = textTransition
-                        // Transition 1: No change, filling time
-                        .transition()
-                        .duration(transition1Length)
-                        .ease(easing1)
-                        
-                        // Transition 2: Display timestamp in sync with map animation
-                        .transition()
-                        .duration(transition2Length)
-                        .ease(easing2)
-                        .text(printDateString)
-                        
-                        // Transition 3: No change, filling time
-                        .transition()
-                        .duration(transition3Length)
-                        .ease(easing3)
-                        .style("opacity", 1);
-                
-                // If coordinates were not found for the selected datetime, we do not animate this datetime value.
-                } else {
-                    transitionChain = transitionChain.transition()
-                        .duration(transition1Length + transition2Length + transition3Length)
-                        .style("opacity", 0);
-                    
-                    textTransition = textTransition.transition()
-                        .duration(transition1Length + transition2Length + transition3Length)
-                        .text(printDateString)
-                        .style("opacity", 1);
-                }
-            }); */
+            // Display cumulative text: https://stackoverflow.com/questions/15448344/can-i-put-delay500-before-an-addclass
+            setTimeout(function(){
+                graphic.removeClass('in-singular').addClass('in-cumulative');
+            }, cumulativeDelay);
 
         }
 
@@ -395,110 +294,136 @@ d3.queue()
                 .style("opacity", 1)
                 .attr("r", 12);
         };
+
+        function drawHubs() {
+            graphic.removeClass('in-singular').addClass('in-cumulative');
+
+            // Date Formatting for Time Series
+            const cumulativeDateline = $('.cumulative-mode .dateline-date');
+            const dateRange = movementData.map(a => a.Date_Time_Rounded);
+            const earliestDate = dateRange.reduce((acc, currentDate) => {
+                return currentDate < acc ? curentDate : acc;
+            }, dateRange[0]);
+            const earliestDateFormat = new Date(earliestDate);
+            const latestDate = dateRange.reduce((acc, currentDate) => {
+                return currentDate > acc ? currentDate : acc;
+            }, dateRange[0]);
+            const latestDateFormat = new Date(latestDate);
+
+            const monthList = ["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
+            // const firstTime = movementData.Date_Time_Rounded;
+            const startDayOfMonth = earliestDateFormat.getDate();
+            const startMonth = monthList[earliestDateFormat.getMonth()];
+            const startYear = earliestDateFormat.getFullYear();
+            const endDayOfMonth = latestDateFormat.getDate();
+            const endMonth = monthList[latestDateFormat.getMonth()];
+            const endYear = latestDateFormat.getFullYear();
         
-        // Draw Hubs
-        var circles = svg.selectAll(".hub")
-            .data(hubData)
-            .enter()
-            .append("circle")
-            .attr("class", "hub")
-            .attr("cx", function(d) {
-                // projection() retunrs [x,y]
-                return projection([d.Hub_Longitude, d.Hub_Latitude])[0];
-            })
-            .attr("cy", function(d) {
-                return projection([d.Hub_Longitude, d.Hub_Latitude])[1];
-            })
-            .attr("r", function(d) {
-                return radiusScale(d.Sturgeon_Count);
-            })
-            .attr("fill", "#BB9F06") 
-            .attr("stroke", "#BB9F06")
-            .attr("stroke-width", 2)
-            .attr("opacity", 0.7)
-            .on("mouseover", function(d) {
-                tooltip.style("opacity", 1)
-                    .html("<strong>" + d.Hub_ID + "</strong><br/>Sturgeon Count: " + d.Sturgeon_Count);
-            })
-            .on("mousemove", function(d) {
-                tooltip.style("left", (d3.event.pageX + 15) + "px")
-                    .style("top", (d3.event.pageY - 28) + "px");
-            })
-            .on("mouseout", function() {
-                tooltip.style("opacity", 0);
-            })
-            .on("click", function(d) {
+            const dateStringCumulative = startMonth + " " + startDayOfMonth + ", " + startYear + " to " + endMonth + " " + endDayOfMonth + ", " + endYear;
+            cumulativeDateline.text(dateStringCumulative);
 
-                const clickedHubName = d.Hub_ID;
-                const hubX = projection([d.Hub_Longitude, d.Hub_Latitude])[0];
-                const hubY = projection([d.Hub_Longitude, d.Hub_Latitude])[1];
+            var circles = svg.selectAll(".hub")
+                .data(hubData)
+                .enter()
+                .append("circle")
+                .attr("class", "hub")
+                .attr("cx", function(d) {
+                    // projection() retunrs [x,y]
+                    return projection([d.Hub_Longitude, d.Hub_Latitude])[0];
+                })
+                .attr("cy", function(d) {
+                    return projection([d.Hub_Longitude, d.Hub_Latitude])[1];
+                })
+                .attr("r", function(d) {
+                    return radiusScale(d.Sturgeon_Count);
+                })
+                .attr("fill", "#BB9F06") 
+                .attr("stroke", "#BB9F06")
+                .attr("stroke-width", 2)
+                .attr("opacity", 0.7)
+                .on("mouseover", function(d) {
+                    tooltip.style("opacity", 1)
+                        .html("<strong>" + d.Hub_ID + "</strong><br/>Sturgeon Count: " + d.Sturgeon_Count);
+                })
+                .on("mousemove", function(d) {
+                    tooltip.style("left", (d3.event.pageX + 15) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                })
+                .on("click", function(d) {
 
-                // Fade other hubs and details
-                circles
-                    .transition()
-                    .duration(500)
-                    .style("opacity", 0.7)
-                    .attr("r", 6);
-                svg.selectAll(".sturgeon-detail").remove();
+                    const clickedHubName = d.Hub_ID;
+                    const hubX = projection([d.Hub_Longitude, d.Hub_Latitude])[0];
+                    const hubY = projection([d.Hub_Longitude, d.Hub_Latitude])[1];
 
-                // Filter details data
-                const allObservations = movementData.filter(obs => obs.Hub_ID === clickedHubName);
-                const uniqueMap = new Map(allObservations.map(obs => [obs.Sturgeon_ID, obs]));
-                const matches = Array.from(uniqueMap.values());
-                const tempDetails = detailData;
-                let merged = tempDetails.filter(e => matches.some(f => f.Sturgeon_ID == e.Sturgeon_ID));
-                merged = _.merge(merged, matches);
+                    // Fade other hubs and details
+                    circles
+                        .transition()
+                        .duration(500)
+                        .style("opacity", 0.7)
+                        .attr("r", 6);
+                    svg.selectAll(".sturgeon-detail").remove();
 
-                const burstGroup = svg.append("g").attr("class", "burst-layer");
+                    // Filter details data
+                    const allObservations = movementData.filter(obs => obs.Hub_ID === clickedHubName);
+                    const uniqueMap = new Map(allObservations.map(obs => [obs.Sturgeon_ID, obs]));
+                    const matches = Array.from(uniqueMap.values());
+                    const tempDetails = detailData;
+                    let merged = tempDetails.filter(e => matches.some(f => f.Sturgeon_ID == e.Sturgeon_ID));
+                    merged = _.merge(merged, matches);
 
-                // Clear and previous detail points
-                burstGroup.selectAll(".sturgeon-detail").remove();
+                    const burstGroup = svg.append("g").attr("class", "burst-layer");
 
-                // Create the burst
-                const detailCircles = burstGroup.selectAll(".sturgeon-detail")
-                    .data(merged)
-                    .enter()
-                    .append("circle")
-                    .attr("class", "sturgeon-detail")
-                    .attr("cx", hubX) // Start at Hub
-                    .attr("cy", hubY)
-                    .attr("r", 0)
-                    .attr("fill", d => sexColorScale(d.Sex))
-                    .attr("stroke", d => sexColorScale(d.Sex))
-                    .style("stroke-width", 3)
-                    .style("fill-opacity", 0.90)
-                    .on("mouseover", function(d) {
-                        tooltip.style("opacity", 1)
-                            .html("<strong>" + d.Sturgeon_ID + "</strong><br/>Sex: " + d.Sex);
+                    // Clear and previous detail points
+                    burstGroup.selectAll(".sturgeon-detail").remove();
+
+                    // Create the burst
+                    const detailCircles = burstGroup.selectAll(".sturgeon-detail")
+                        .data(merged)
+                        .enter()
+                        .append("circle")
+                        .attr("class", "sturgeon-detail")
+                        .attr("cx", hubX) // Start at Hub
+                        .attr("cy", hubY)
+                        .attr("r", 0)
+                        .attr("fill", d => sexColorScale(d.Sex))
+                        .attr("stroke", d => sexColorScale(d.Sex))
+                        .style("stroke-width", 3)
+                        .style("fill-opacity", 0.90)
+                        .on("mouseover", function(d) {
+                            tooltip.style("opacity", 1)
+                                .html("<strong>" + d.Sturgeon_Name + "</strong><br/>Sex: " + d.Sex);
+                            })
+                        .on("mousemove", function(d) {
+                            tooltip.style("left", (d3.event.pageX + 15) + "px")
+                                .style("top", (d3.event.pageY - 28) + "px");
+                            })
+                        .on("mouseout", function() {
+                            tooltip.style("opacity", 0)
+                            })
+                        .on("click", handleDetailClick)
+                        .transition()
+                        .duration(800)
+                        .delay((d, i) => i * 30) 
+                        .attr("cx", function(d, i) {
+                            // Function for ring burst appearance
+                            const ringIndex = Math.floor(i/10);
+                            const posOnRing = i % 10;
+                            const radius = 40 + (ringIndex * 25);
+                            const angle = (posOnRing / 10) * (2 * Math.PI);
+                            return hubX + radius * Math.cos(angle);
                         })
-                    .on("mousemove", function(d) {
-                        tooltip.style("left", (d3.event.pageX + 15) + "px")
-                            .style("top", (d3.event.pageY - 28) + "px");
+                        .attr("cy", function(d, i) {
+                            // Function for ring burst appearance
+                            const ringIndex = Math.floor(i/10);
+                            const posOnRing = i % 10;
+                            const radius = 40 + (ringIndex * 25);
+                            const angle = (posOnRing / 10) * (2 * Math.PI);
+                            return hubY + radius * Math.sin(angle);
                         })
-                    .on("mouseout", function() {
-                        tooltip.style("opacity", 0)
-                        })
-                    .on("click", handleDetailClick)
-                    .transition()
-                    .duration(800)
-                    .delay((d, i) => i * 30) 
-                    .attr("cx", function(d, i) {
-                        // Function for ring burst appearance
-                        const ringIndex = Math.floor(i/10);
-                        const posOnRing = i % 10;
-                        const radius = 40 + (ringIndex * 25);
-                        const angle = (posOnRing / 10) * (2 * Math.PI);
-                        return hubX + radius * Math.cos(angle);
-                    })
-                    .attr("cy", function(d, i) {
-                        // Function for ring burst appearance
-                        const ringIndex = Math.floor(i/10);
-                        const posOnRing = i % 10;
-                        const radius = 40 + (ringIndex * 25);
-                        const angle = (posOnRing / 10) * (2 * Math.PI);
-                        return hubY + radius * Math.sin(angle);
-                    })
-                    .attr("r", 8);
-
-    });
+                        .attr("r", 8);
+        })
+    };
 });

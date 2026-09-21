@@ -5,6 +5,7 @@
 		<title>Atlantic Sturgeon Real-Time Tracker</title>
 		<script type="text/javascript" src="../../d3.js"></script>
 		<script type="text/javascript" src="../../lodash.js"></script>
+		<script type="text/javascript" src="../../jquery.js"></script>
 		<style>
 			* {
 				box-sizing: border-box;
@@ -54,6 +55,7 @@
 
 			/* Floating Card */
 			.card {
+				font-family: "candara", sans-serif;
                 position: absolute;
                 top: 24px;
                 right: 24px;
@@ -152,8 +154,13 @@
 			}
 			
 			circle:hover { 
-				fill: #BB9F06; 
+				fill: #e0c007; 
 				cursor: pointer; 
+			}
+
+			hub:hover {
+				fill: #e0c007;
+				cursor: pointer;
 			}
 			
 			text {
@@ -162,31 +169,107 @@
 				font-weight: 400;
 				fill: #BB9F06;
 			}
+			#the-graphic {
+				position: fixed;
+				top: 0; left: 0; right: 0; bottom: 0;
+				overflow: hidden;
+				}
+			
+			.title {
+				font-size: 55px;
+				font-weight: bold;
+				color: #888;
+				width: auto;
+				display:block;
+			}
+
+			.the-dateline {
+				font-size: 15px;
+				color: #888;
+				background-color: #e1e1dd;
+				position: absolute;
+				text-align: center;
+				width: auto;
+				top: 7%;
+				left: 33%;
+				box-shadow: 0px 0px 12px 12px rgba(225, 225, 221, 1);
+				border-radius: 30px;
+			}
+
+			.dateline-date {
+				font-weight: bold;
+				font-size: 22px;
+				display: block;
+				margin-left: 3px;
+			}
+
+			.dateline-label {
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				display: block;
+				font-size: 15px;
+			}
+
+			.singular-mode {
+				display: none;
+			}
+
+			.cumulative-mode {
+				visibility: hidden;
+				opacity: 0;
+			}
+
+			.in-singular .singular-mode {
+				display: block;
+			}
+
+			.in-cumulative .cumulative-mode {
+				visibility: visible;
+				opacity: 1;
+			}
+
 		</style>
 	</head>
 	<body>
-        <div class="container">
-            <!-- Main Content (Map) -->
-            <main class="content">
-                <div id="map-container">
-                    <!-- Your 1920x1080 PNG or SVG map image goes here -->
-                </div>
-                <div id="tooltip"></div>
-            </main>
+		<div id="the-graphic" class="in-cumulative">
+			<div class="container">
+						<!-- Main Content (Map) -->
+						<main class="content">
+							<div id="map-container">
+								<!-- Your 1920x1080 PNG or SVG map image goes here -->
+							</div>
+							<div id="tooltip"></div>
+						</main>
 
-            <!-- Floating Overlay Card -->
-            <div class="card">
-				<h2>Sturgeon Selection</h2>
-                <select id="selectSturgeon">
-                    <!-- Options populated by sturgeon.js -->
-                </select>
-                
-                <div class="card-details" id="card-content">
-                    <!-- D3 / JS will inject content here -->
-                </div>
-            </div>
-        </div>
+						<!-- Floating Overlay Card -->
+						<div class="card">
+							<h2>Sturgeon Selection</h2>
+							<select id="selectSturgeon">
+								<!-- Options populated by sturgeon.js -->
+							</select>
+							
+							<div class="card-details" id="card-content">
+								<!-- D3 / JS will inject content here -->
+							</div>
+						</div>
 
-        <script type="text/javascript" src="sturgeon.js"></script>
+						<div class="the-dateline singular-mode">
+							<div class="title">Atlantic Sturgeon Tracker</div>
+							<br>
+							<span class="dateline-label">Sturgeon Movement on </span>
+							<div class="dateline-date"> </div>
+						</div>
+
+						<div class="the-dateline cumulative-mode">
+							<div class="title">Atlantic Sturgeon Tracker</div>
+							<br>
+							<span class="dateline-label">Sturgeon Movement</span>
+							<div class="dateline-date"> </div>
+						</div>
+
+					</div>
+
+					<script type="text/javascript" src="sturgeon.js"></script>
+		</div>
     </body>
 </html>
