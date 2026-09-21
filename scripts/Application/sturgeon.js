@@ -164,6 +164,74 @@ d3.queue()
             
             // Initialize the traveler variables - setting starting style characteristics and first lat/long location. 
             // It's possible this is null in the beginning, if a ping was not recognized at the start of our time series.
+            
+            // Container for map pings
+            const pingGroup = svg.append("g").attr("class", "pings");
+
+            // Keep track of cumulative time to schedule pings independently
+            let cumulativeDelay = 0;
+
+            timelapseWithCoords.forEach((pos, index) => {
+                const hasCoords = pos.Hub_Longitude !== null && pos.Hub_Latitude !== null;
+
+                // Base timings for this step
+                let expandDuration = 500;
+                let fadeDuration = 2000; // Increase fade time so it stays visible while next pings spawn
+                let stepInterval = 1300;  // How long to wait BEFORE starting the next ping
+
+                if (pos.Distinct_Hubs > 1) {
+                    //expandDuration /= pos.Distinct_Hubs;
+                    //fadeDuration /= pos.Distinct_Hubs;
+                    stepInterval /= pos.Distinct_Hubs;
+                }
+
+                if (hasCoords) {
+                    const [x, y] = projection([pos.Hub_Longitude, pos.Hub_Latitude]);
+
+                    // 1. APPEND A NEW CIRCLE FOR EACH PING
+                    pingGroup.append("circle")
+                        .attr("class", "ping")
+                        .attr("cx", x)
+                        .attr("cy", y)
+                        .attr("r", 5)
+                        .style("fill", pointerFillColor)
+                        .style("fill-opacity", pointerFillOpacity)
+                        .style("stroke", pointerStrokeColor)
+                        .style("stroke-width", pointerStrokeWidth)
+                        .style("opacity", 0)
+                        
+                        // Phase 1: Delay until its turn, then expand & reveal
+                        .transition()
+                        .delay(cumulativeDelay)
+                        .duration(expandDuration)
+                        .ease(d3.easeCircleOut)
+                        .style("opacity", 1)
+                        .attr("r", 25)
+
+                        // Phase 2: Fade out slowly while next circles are already triggering
+                        .transition()
+                        .duration(fadeDuration)
+                        .ease(d3.easeLinear)
+                        .style("opacity", 0)
+                        .attr("r", 35) // Optional: continue slightly expanding as it fades
+
+                        // Clean up node after animation finishes to prevent DOM bloat
+                        .remove();
+                }
+
+                // 2. UPDATE TEXT TIMESTAMP INDEPENDENTLY
+                const printTime = pos.Date_Time_Rounded;
+                const printDateString = `${monthList[printTime.getMonth()]} ${printTime.getDate()}, ${printTime.getFullYear()} ${printTime.getHours()}:00`;
+
+                textTime.transition()
+                    .delay(cumulativeDelay)
+                    .duration(100)
+                    .text(printDateString);
+
+                // Advance the timeline by the step interval (NOT the full fade duration)
+                cumulativeDelay += stepInterval;
+            });
+            /*
             const traveler = svg.append("circle")
                 .attr("class", "ping-traveler")
                 .attr("r", 10)
@@ -185,8 +253,8 @@ d3.queue()
 
                 // Transition parameters
                 var transition1Length = 50;
-                var transition2Length = 400;
-                var transition3Length = 200;
+                var transition2Length = 500;
+                var transition3Length = 800;
 
                 const easing1 = d3.easeLinear;
                 const easing2 = d3.easeCircleOut;
@@ -270,7 +338,8 @@ d3.queue()
                         .text(printDateString)
                         .style("opacity", 1);
                 }
-            });
+            }); */
+
         }
 
         // Function to update the sidebar when an individual sturgeon is selected
