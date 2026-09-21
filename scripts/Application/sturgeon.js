@@ -77,7 +77,7 @@ d3.queue()
         radiusScale.domain([0, d3.max(hubData, d => d.Sturgeon_Count)]);
         sexColorScale = d3.scaleOrdinal()
             .domain(["Male", "Female", "Unknown"])
-            .range(["#88B5BD", "#b0413e", "#cccccc"]);
+            .range(["#88B5BD", "#b0413e", "#5F5F5F"]);
 
         // Draw the basemap image first
         svg.append("image")
@@ -88,7 +88,12 @@ d3.queue()
                 svg.selectAll(".hub")
                     .transition()
                     .duration(500)
-                    .attr("r", d=> radiusScale(d.Sturgeon_Count));
+                    .attr("r", d=> radiusScale(d.Sturgeon_Count))
+                    .attr("fill", "#BB9F06") 
+                    .attr("stroke", "#BB9F06")
+                    .attr("stroke-width", 2)
+                    .style("opacity", 0.7)
+                    .attr("pointer-events", "all");
                 svg.selectAll(".sturgeon-detail").remove();
                 svg.selectAll(".pings").remove();
 
@@ -136,7 +141,9 @@ d3.queue()
             svg.selectAll(".hub").transition()
                 .duration(100)
                 .attr("r", 6)
-                .style("fill", "#BB9F06"); // remove old hubs
+                .style("fill", "#BB9F06") // remove old hubs 
+                .attr("stroke", "#BB9F06")
+                .attr("opacity", 0.7);
 
             // Styling Text Varialbe
             const textX = 670; // x position
@@ -232,7 +239,12 @@ d3.queue()
                     .transition()
                     .delay(cumulativeDelay)
                     .duration(1000)
-                    .attr("r", d=> radiusScale(d.Sturgeon_Count));
+                    .attr("r", d=> radiusScale(d.Sturgeon_Count))
+                    .attr("fill", "#BB9F06") 
+                    .attr("stroke", "#BB9F06")
+                    .attr("stroke-width", 2)
+                    .style("opacity", 0.7)
+                    .attr("pointer-events", "all");
 
             // Display cumulative text: https://stackoverflow.com/questions/15448344/can-i-put-delay500-before-an-addclass
             setTimeout(function(){
@@ -272,7 +284,103 @@ d3.queue()
                 singleAnimation(detailID);
             })
         };
+        function handleHubClick(d, i, nodes) {
+            d3.event.stopPropagation();
 
+            const clickedHubName = d.Hub_ID;
+            const hubX = projection([d.Hub_Longitude, d.Hub_Latitude])[0];
+            const hubY = projection([d.Hub_Longitude, d.Hub_Latitude])[1];
+
+            // Function for ring burst appearance
+            const radiusCount = d.Sturgeon_Count;
+            const ringIndexRadius = Math.floor(radiusCount/10);
+            const radiusRadius = 40 + (ringIndexRadius * 25) + 12;
+            //const angle = (posOnRing / 10) * (2 * Math.PI);
+            //return hubX + radius * Math.cos(angle);
+
+            d3.selectAll(".hub")
+                .transition()
+                .duration(500)
+                .style("opacity", 0.7)
+                .attr("r", 6);
+            
+            // Increase size and opacity for selected hub
+            d3.select(nodes[i])
+                .raise()
+                .transition().duration(500)
+                .style("stroke-width", 1)
+                .style("opacity", 0.97)
+                .attr("r", radiusRadius)
+                .attr("pointer-events", "none");
+
+            svg.selectAll(".sturgeon-detail").remove();
+
+
+            // Filter details data
+            const allObservations = movementData.filter(obs => obs.Hub_ID === clickedHubName);
+            const uniqueMap = new Map(allObservations.map(obs => [obs.Sturgeon_ID, obs]));
+            const matches = Array.from(uniqueMap.values());
+            const tempDetails = detailData;
+            let merged = tempDetails.filter(e => matches.some(f => f.Sturgeon_ID == e.Sturgeon_ID));
+            merged = _.merge(merged, matches);
+
+
+            const burstGroup = svg.append("g").attr("class", "burst-layer");
+
+
+            // Clear and previous detail points
+            burstGroup.selectAll(".sturgeon-detail").remove();
+
+
+            // Create the burst
+            const detailCircles = burstGroup.selectAll(".sturgeon-detail")
+                .data(merged)
+                .enter()
+                .append("circle")
+                .attr("class", "sturgeon-detail")
+                .attr("cx", hubX) // Start at Hub
+                .attr("cy", hubY)
+                .attr("r", 0)
+                .attr("fill", d => sexColorScale(d.Sex))
+                .attr("stroke", d => sexColorScale(d.Sex))
+                .style("stroke-width", 3)
+                .style("fill-opacity", 0.90)
+                .on("mouseover", function(d) {
+                    tooltip.style("opacity", 1)
+                        .html("<strong>" + d.Sturgeon_Name + "</strong><br/>Sex: " + d.Sex);
+                    })
+                .on("mousemove", function(d) {
+                    tooltip.style("left", (d3.event.pageX + 15) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                    })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0)
+                    })
+                .on("click", handleDetailClick)
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 30)
+                .attr("cx", function(d, i) {
+                    // Function for ring burst appearance
+                    const ringIndex = Math.floor(i/10);
+                    const posOnRing = i % 10;
+                    const radius = 40 + (ringIndex * 25);
+                    const angle = (posOnRing / 10) * (2 * Math.PI);
+                    return hubX + radius * Math.cos(angle);
+                })
+                .attr("cy", function(d, i) {
+                    // Function for ring burst appearance
+                    const ringIndex = Math.floor(i/10);
+                    const posOnRing = i % 10;
+                    const radius = 40 + (ringIndex * 25);
+                    const angle = (posOnRing / 10) * (2 * Math.PI);
+                    return hubY + radius * Math.sin(angle);
+                })
+                .attr("r", 8);
+
+
+
+        }
         // Function to style circle when indivdual sturgeon is selected
         function handleDetailClick(d, i, nodes) {
             // 'd' is the detail data
@@ -352,78 +460,6 @@ d3.queue()
                 .on("mouseout", function() {
                     tooltip.style("opacity", 0);
                 })
-                .on("click", function(d) {
-
-                    const clickedHubName = d.Hub_ID;
-                    const hubX = projection([d.Hub_Longitude, d.Hub_Latitude])[0];
-                    const hubY = projection([d.Hub_Longitude, d.Hub_Latitude])[1];
-
-                    // Fade other hubs and details
-                    circles
-                        .transition()
-                        .duration(500)
-                        .style("opacity", 0.7)
-                        .attr("r", 6);
-                    svg.selectAll(".sturgeon-detail").remove();
-
-                    // Filter details data
-                    const allObservations = movementData.filter(obs => obs.Hub_ID === clickedHubName);
-                    const uniqueMap = new Map(allObservations.map(obs => [obs.Sturgeon_ID, obs]));
-                    const matches = Array.from(uniqueMap.values());
-                    const tempDetails = detailData;
-                    let merged = tempDetails.filter(e => matches.some(f => f.Sturgeon_ID == e.Sturgeon_ID));
-                    merged = _.merge(merged, matches);
-
-                    const burstGroup = svg.append("g").attr("class", "burst-layer");
-
-                    // Clear and previous detail points
-                    burstGroup.selectAll(".sturgeon-detail").remove();
-
-                    // Create the burst
-                    const detailCircles = burstGroup.selectAll(".sturgeon-detail")
-                        .data(merged)
-                        .enter()
-                        .append("circle")
-                        .attr("class", "sturgeon-detail")
-                        .attr("cx", hubX) // Start at Hub
-                        .attr("cy", hubY)
-                        .attr("r", 0)
-                        .attr("fill", d => sexColorScale(d.Sex))
-                        .attr("stroke", d => sexColorScale(d.Sex))
-                        .style("stroke-width", 3)
-                        .style("fill-opacity", 0.90)
-                        .on("mouseover", function(d) {
-                            tooltip.style("opacity", 1)
-                                .html("<strong>" + d.Sturgeon_Name + "</strong><br/>Sex: " + d.Sex);
-                            })
-                        .on("mousemove", function(d) {
-                            tooltip.style("left", (d3.event.pageX + 15) + "px")
-                                .style("top", (d3.event.pageY - 28) + "px");
-                            })
-                        .on("mouseout", function() {
-                            tooltip.style("opacity", 0)
-                            })
-                        .on("click", handleDetailClick)
-                        .transition()
-                        .duration(800)
-                        .delay((d, i) => i * 30) 
-                        .attr("cx", function(d, i) {
-                            // Function for ring burst appearance
-                            const ringIndex = Math.floor(i/10);
-                            const posOnRing = i % 10;
-                            const radius = 40 + (ringIndex * 25);
-                            const angle = (posOnRing / 10) * (2 * Math.PI);
-                            return hubX + radius * Math.cos(angle);
-                        })
-                        .attr("cy", function(d, i) {
-                            // Function for ring burst appearance
-                            const ringIndex = Math.floor(i/10);
-                            const posOnRing = i % 10;
-                            const radius = 40 + (ringIndex * 25);
-                            const angle = (posOnRing / 10) * (2 * Math.PI);
-                            return hubY + radius * Math.sin(angle);
-                        })
-                        .attr("r", 8);
-        })
+                .on("click", handleHubClick)
     };
 });
