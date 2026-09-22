@@ -6,266 +6,39 @@
 		<script type="text/javascript" src="../../d3.js"></script>
 		<script type="text/javascript" src="../../lodash.js"></script>
 		<script type="text/javascript" src="../../jquery.js"></script>
-		<style>
-			* {
-				box-sizing: border-box;
-			}
-
-			body, html { 
-				margin: 0;
-				padding: 0;
-				width: 100%;
-				height: 100%;
-				font-family: sans-serif; 
-				overflow: hidden; /* Prevents page scrollbars */
-			}
-
-			/* Container takes up entire screen and acts as positioning anchor */
-			.container {
-				position: relative;
-				width: 100vw;
-				height: 100vh;
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				background-color: #e1e1dd;
-				overflow: hidden;
-			}
-
-			/* Map area fills the container while maintaining 1920 x 1080 bounds */
-			.content {
-				width: 100%;
-				height: 100%;
-				max-width: 1920px;
-				max-height: 1080px;
-				position: relative;
-				line-height: 0;
-			}
-
-			/* Ensure any PNG or SVG map fills the container properly */
-			#map-container { 
-				width: 100%;
-				height: 100%;
-				max-width: 100vw;
-				max-height: 100vh;
-				aspect-ratio: 16 / 9; /* Matches your 1920x1080 resolution */
-				position: relative;
-				line-height: 0;
-			}
-
-			/* Floating Card */
-			.card {
-				font-family: "candara", sans-serif;
-				color: #5F5F5F;
-                position: absolute;
-                top: 24px;
-                right: 24px;
-                width: 320px; /* ~1/8th scale relative to screen width */
-                max-height: calc(100% - 48px);
-                background: #F5F5F5;
-                backdrop-filter: blur(8px); /* Modern blurred background effect */
-                border-radius: 10px;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-                border: 1px solid rgba(220, 220, 220, 0.8);
-                z-index: 20;
-                padding: 20px;
-                display: flex;
-                flex-direction: column;
-                gap: 16px;
-                overflow-y: auto;
-            }
-
-			/* Dropdown styling inside card */
-			#selectSturgeon {
-                width: 100%;
-                padding: 10px;
-                font-size: 14px;
-                border-radius: 6px;
-                border: 1px solid #ccc;
-                background-color: #fff;
-                cursor: pointer;
-            }
-
-			.card-details {
-				font-family: "candara", sans-serif;
-				font-weight: 400;
-				color: #5F5F5F;
-				line-height: 1.5;
-			}
-
-			#tooltip {
-                position: absolute;
-                padding: 8px;
-                background: white;
-                border: 1px solid #ccc;
-                pointer-events: none; /* Crucial: clicks pass through to map elements */
-                opacity: 0;
-                font-size: 12px;
-                border-radius: 4px;
-				line-height: 1.4;
-                box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
-                z-index: 30;
-            }
-
-			/* Modern Play Button Styling */
-			#play-button {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				gap: 8px;
-				width: 100%;
-				margin-top: 16px;
-				padding: 12px 20px;
-				
-				/* Modern Colors & Gradient */
-				background: linear-gradient(135deg, #397782 0%, #2F5E66 100%);
-				color: #ffffff;
-				font-family: inherit;
-				font-size: 14px;
-				font-weight: 600;
-				letter-spacing: 0.3px;
-				
-				/* Border & Shadow */
-				border: none;
-				border-radius: 8px;
-				cursor: pointer;
-				box-shadow: 0 4px 12px #45929F;
-				
-				/* Smooth Animation */
-				transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-			}
-
-			/* Hover State - Lift and Enhance Glow */
-			#play-button:hover {
-				background: linear-gradient(135deg, #45929F 0%, #397782 100%);
-				box-shadow: 0 6px 16px #45929F;
-				transform: translateY(-1px);
-			}
-
-			/* Active Press State */
-			#play-button:active {
-				transform: translateY(0);
-				box-shadow: 0 2px 6px #45929F;
-			}
-
-			/* Accessibility Focus Ring */
-			#play-button:focus-visible {
-				outline: 2px solid #45929F;
-				outline-offset: 2px;
-			}
-			
-			circle:hover { 
-				fill: #e0c007; 
-				cursor: pointer; 
-			}
-			
-			text {
-				font-family: candara, sans-serif;
-				font-size: 52px;
-				font-weight: 400;
-				fill: #BB9F06;
-			}
-			#the-graphic {
-				position: fixed;
-				top: 0; left: 0; right: 0; bottom: 0;
-				overflow: hidden;
-				}
-			
-			.title {
-				font-size: 55px;
-				font-weight: bold;
-				color: #5F5F5F;
-				width: auto;
-				display:block;
-			}
-
-			.the-dateline {
-				font-size: 15px;
-				color: #5F5F5F;
-				background-color: #e1e1dd;
-				position: absolute;
-				text-align: center;
-				width: auto;
-				top: 7%;
-				left: 33%;
-				box-shadow: 0px 0px 12px 12px rgba(225, 225, 221, 1);
-				border-radius: 30px;
-			}
-
-			.dateline-date {
-				font-weight: bold;
-				font-size: 28px;
-				display: block;
-				margin-left: 3px;
-			}
-
-			.dateline-label {
-				text-transform: uppercase;
-				letter-spacing: 1px;
-				display: block;
-				font-size: 22px;
-			}
-
-			.singular-mode {
-				display: none;
-			}
-
-			.cumulative-mode {
-				visibility: hidden;
-				opacity: 0;
-			}
-
-			.in-singular .singular-mode {
-				display: block;
-			}
-
-			.in-cumulative .cumulative-mode {
-				visibility: visible;
-				opacity: 1;
-			}
-
-		</style>
+		<link rel="stylesheet" type="text/css" href="styles.css" media="screen" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap" rel="stylesheet">	
 	</head>
-	<body>
-		<div id="the-graphic" class="in-cumulative">
-			<div class="container">
-						<!-- Main Content (Map) -->
-						<main class="content">
-							<div id="map-container">
-								<!-- Your 1920x1080 PNG or SVG map image goes here -->
-							</div>
-							<div id="tooltip"></div>
-						</main>
+	<body id="the-graphic" class="in-cumulative">
+		<div id="tooltip"></div>
+		
+		<h1>Atlantic Sturgeon Tracker</h1>
 
-						<!-- Floating Overlay Card -->
-						<div class="card">
-							<h2>Sturgeon Selection</h2>
-							<select id="selectSturgeon">
-								<!-- Options populated by sturgeon.js -->
-							</select>
-							
-							<div class="card-details" id="card-content">
-								<!-- D3 / JS will inject content here -->
-							</div>
-						</div>
+		<content>
 
-						<div class="the-dateline singular-mode">
-							<div class="title">Atlantic Sturgeon Tracker</div>
-							<br>
-							<span class="dateline-label">Sturgeon Movement on </span>
-							<div class="dateline-date"> </div>
-						</div>
+			<map-content>
+				<div id="map-container"></div>
+				<div class="the-dateline singular-mode">
+					<span class="dateline-label">Sturgeon Movement on </span>
+					<div class="dateline-date"> </div>
+				</div>
+				<div class="the-dateline cumulative-mode">
+					<span class="dateline-label">Sturgeon Movement</span>
+					<div class="dateline-date"> </div>
+				</div>
+			</map-content>
 
-						<div class="the-dateline cumulative-mode">
-							<div class="title">Atlantic Sturgeon Tracker</div>
-							<br>
-							<span class="dateline-label">Sturgeon Movement</span>
-							<div class="dateline-date"> </div>
-						</div>
+			<card-content>
+				<h2>Sturgeon Selection</h2>
+				<select id="selectSturgeon"></select>		
+				<div id="card-content"></div>
+			</card-content>
 
-					</div>
+		</content>
 
-					<script type="text/javascript" src="sturgeon.js"></script>
-		</div>
+		<script type="text/javascript" src="sturgeon.js"></script>
+
     </body>
 </html>
