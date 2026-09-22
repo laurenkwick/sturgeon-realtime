@@ -1,0 +1,105 @@
+body {
+    width: 1200px;
+    margin: 0 auto;
+}
+
+/* Dropdown styling inside card */
+#selectSturgeon {
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+
+#tooltip {
+    position: absolute;
+    padding: 8px;
+    background: white;
+    border: 1px solid #ccc;
+    pointer-events: none; /* Crucial: clicks pass through to map elements */
+    opacity: 0;
+    font-size: 12px;
+    border-radius: 4px;
+    line-height: 1.4;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+    z-index: 30;
+}
+
+#play-button {
+    background: linear-gradient(135deg, #397782 0%, #2F5E66 100%);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px #45929F;
+    
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#play-button:hover {
+    background: linear-gradient(135deg, #45929F 0%, #397782 100%);
+    box-shadow: 0 6px 16px #45929F;
+    transform: translateY(-1px);
+}
+
+#play-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px #45929F;
+}
+
+#play-button:focus-visible {
+    outline: 2px solid #45929F;
+    outline-offset: 2px;
+}
+
+
+#the-graphic {
+    background-color: #e1e1dd;
+}
+
+
+.the-dateline {
+    font-size: 15px;
+    color: #5F5F5F;
+    background-color: #e1e1dd;
+    top: 7%;
+    left: 33%;
+    box-shadow: 0px 0px 12px 12px rgba(225, 225, 221, 1);
+    border-radius: 30px;
+}
+
+.dateline-date {
+    font-weight: bold;
+    font-size: 28px;
+}
+
+.dateline-label {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 22px;
+}
+
+.singular-mode {
+    display: none;
+}
+
+.cumulative-mode {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.in-singular .singular-mode {
+    display: block;
+}
+
+.in-cumulative .cumulative-mode {
+    visibility: visible;
+    opacity: 1;
+}
