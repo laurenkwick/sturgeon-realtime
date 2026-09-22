@@ -1,10 +1,75 @@
 body {
-    width: 1200px;
-    margin: 0 auto;
+    font-family: "Merriweather", serif;
+    color: #5F5F5F;
+    font-optical-sizing: auto;
+}
+
+h1 {
+    text-align: center;
+    color: #fefefd;
+    margin: 0;
+    font-size: 50px;
+}
+
+h2 {
+    margin: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: normal;
+    text-align: center;
+}
+
+p {
+    margin: 20px;
+}
+
+ul {
+    margin: 20px;
+}
+
+content {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+map-content {
+    /* Grows to fill available space, shrinks if needed, base width 0 */
+    flex: 5 4 0px; 
+    min-width: 700px; /* Optional: prevents map-content from becoming too narrow before wrap */
+    position: relative;
+    box-sizing: border-box;
+    margin: 20px;
+    padding: 15px;
+    gap: 16px;
+    backdrop-filter: blur(8px);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(220, 220, 220, 0.8);
+    align-self: flex-start;
+    background-color: #fefefd;
+}
+
+card-content {
+    /* Grows (1), shrinks (1), but starts at a base width of 250px */
+    flex: 1 1 150px;
+    backdrop-filter: blur(8px);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(220, 220, 220, 0.8);
+    margin: 20px;
+    padding: 20px;
+    gap: 16px;
+    background-color: #fefefd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* Dropdown styling inside card */
 #selectSturgeon {
+    padding: 10px;
+    width: 50%;
     font-size: 14px;
     border-radius: 6px;
     border: 1px solid #ccc;
@@ -28,7 +93,13 @@ body {
 }
 
 #play-button {
-    background: linear-gradient(135deg, #397782 0%, #2F5E66 100%);
+    justify-content: center;
+    gap: 8px;
+    width: 50%;
+    margin-top: 16px;
+    padding: 12px 20px;
+
+    background: linear-gradient(135deg, #BB9F06 0%, #998305 100%);
     color: #ffffff;
     font-family: inherit;
     font-size: 14px;
@@ -36,54 +107,64 @@ body {
     letter-spacing: 0.3px;
     
     border: none;
+    margin: 20px;
     border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 12px #45929F;
+    box-shadow: 0 4px 8px #e0c007;
     
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #play-button:hover {
-    background: linear-gradient(135deg, #45929F 0%, #397782 100%);
-    box-shadow: 0 6px 16px #45929F;
+    background: linear-gradient(135deg, #e0c007 0%, #BB9F06 100%);
+    box-shadow: 0 6px 10px #e0c007;
     transform: translateY(-1px);
 }
 
 #play-button:active {
     transform: translateY(0);
-    box-shadow: 0 2px 6px #45929F;
+    box-shadow: 0 2px 6px #e0c007;
 }
 
 #play-button:focus-visible {
-    outline: 2px solid #45929F;
+    outline: 2px solid #e0c007;
     outline-offset: 2px;
 }
 
 
 #the-graphic {
-    background-color: #e1e1dd;
+    background-color: #2F5E66;
 }
 
 
 .the-dateline {
-    font-size: 15px;
     color: #5F5F5F;
     background-color: #e1e1dd;
-    top: 7%;
-    left: 33%;
+    top: 10%;
     box-shadow: 0px 0px 12px 12px rgba(225, 225, 221, 1);
     border-radius: 30px;
+    position: absolute;
+    top: 15%;  /* position the top  edge of the element at the middle of the parent */
+    left: 50%; /* position the left edge of the element at the middle of the parent */
+
+    transform: translate(-50%, -50%); /* This is a shorthand of
+                                         translateX(-50%) and translateY(-50%) */
+    text-align: center;
 }
 
 .dateline-date {
     font-weight: bold;
-    font-size: 28px;
+    font-size: 18px;
+}
+
+.singular-mode .dateline-date {
+    color: #b0413e;
 }
 
 .dateline-label {
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-size: 22px;
+    font-size: 15px;
 }
 
 .singular-mode {

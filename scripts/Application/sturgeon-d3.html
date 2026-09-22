@@ -7,35 +7,38 @@
 		<script type="text/javascript" src="../../lodash.js"></script>
 		<script type="text/javascript" src="../../jquery.js"></script>
 		<link rel="stylesheet" type="text/css" href="styles.css" media="screen" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap" rel="stylesheet">	
 	</head>
-	<body>
+	<body id="the-graphic" class="in-cumulative">
+		<div id="tooltip"></div>
+		
+		<h1>Atlantic Sturgeon Tracker</h1>
 
-		<div id="the-graphic" class="in-cumulative">
+		<content>
 
-			<h1>Atlantic Sturgeon Tracker</h1>
+			<map-content>
+				<div id="map-container"></div>
+				<div class="the-dateline singular-mode">
+					<span class="dateline-label">Sturgeon Movement on </span>
+					<div class="dateline-date"> </div>
+				</div>
+				<div class="the-dateline cumulative-mode">
+					<span class="dateline-label">Sturgeon Movement</span>
+					<div class="dateline-date"> </div>
+				</div>
+			</map-content>
 
-			<div id="map-container"></div>
+			<card-content>
+				<h2>Sturgeon Selection</h2>
+				<select id="selectSturgeon"></select>		
+				<div id="card-content"></div>
+			</card-content>
 
-			<div id="tooltip"></div>
+		</content>
 
-			<h2>Sturgeon Selection</h2>
-
-			<div class="the-dateline singular-mode">
-				<span class="dateline-label">Sturgeon Movement on </span>
-				<div class="dateline-date"> </div>
-			</div>
-
-			<div class="the-dateline cumulative-mode">
-				<span class="dateline-label">Sturgeon Movement</span>
-				<div class="dateline-date"> </div>
-			</div>
-
-			<select id="selectSturgeon"></select>
-					
-			<div id="card-content"></div>
-
-			<script type="text/javascript" src="sturgeon.js"></script>
-		</div>
+		<script type="text/javascript" src="sturgeon.js"></script>
 
     </body>
 </html>
