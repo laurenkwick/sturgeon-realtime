@@ -64,12 +64,13 @@ card-content {
     display: flex;
     flex-direction: column;
     align-items: center;
+    box-sizing: border-box;
 }
 
 /* Dropdown styling inside card */
 #selectSturgeon {
     padding: 10px;
-    width: 50%;
+    width: 100%;
     font-size: 14px;
     border-radius: 6px;
     border: 1px solid #ccc;
@@ -85,7 +86,7 @@ card-content {
     border: 1px solid #ccc;
     pointer-events: none; /* Crucial: clicks pass through to map elements */
     opacity: 0;
-    font-size: 12px;
+    font-size: 15px;
     border-radius: 4px;
     line-height: 1.4;
     box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
@@ -93,9 +94,9 @@ card-content {
 }
 
 #play-button {
-    justify-content: center;
+    
     gap: 8px;
-    width: 50%;
+    width: 100%;
     margin-top: 16px;
     padding: 12px 20px;
 
@@ -107,7 +108,6 @@ card-content {
     letter-spacing: 0.3px;
     
     border: none;
-    margin: 20px;
     border-radius: 8px;
     cursor: pointer;
     box-shadow: 0 4px 8px #e0c007;
@@ -137,6 +137,12 @@ card-content {
 }
 
 
+circle:hover { 
+    fill: #e0c007; 
+    cursor: pointer; 
+}
+
+
 .the-dateline {
     color: #5F5F5F;
     background-color: #e1e1dd;
@@ -154,7 +160,7 @@ card-content {
 
 .dateline-date {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .singular-mode .dateline-date {
@@ -164,7 +170,7 @@ card-content {
 .dateline-label {
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-size: 15px;
+    font-size: 18px;
 }
 
 .singular-mode {
