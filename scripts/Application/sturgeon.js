@@ -26,7 +26,7 @@ const projection = d3.geoMercator()
     });
 
 // Create a scale for circle size
-const radiusScale = d3.scaleSqrt().range([1,40]);
+const radiusScale = d3.scaleSqrt().range([1,50]);
 
 // Initialize tooltip
 var tooltip = d3.select("#tooltip");
@@ -79,6 +79,10 @@ d3.queue()
             .domain(["Male", "Female", "Unknown"])
             .range(["#88B5BD", "#b0413e", "#5F5F5F"]);
 
+        sexStrokeColorScale = d3.scaleOrdinal()
+            .domain(["Male", "Female", "Unknown"])
+            .range(["#516a6e", "#58211f", "#1f1e1e"]);
+
         // Draw the basemap image first
         svg.append("image")
             .attr("xlink:href", "../../data/Newspaper_MinimalText_20260921_V06.png")
@@ -89,7 +93,7 @@ d3.queue()
                     .transition()
                     .duration(500)
                     .attr("r", d=> radiusScale(d.Sturgeon_Count))
-                    .attr("fill", "#BB9F06") 
+                    //.attr("fill", "#BB9F06") 
                     .attr("stroke", "#BB9F06")
                     .attr("stroke-width", 2)
                     .style("opacity", 0.7)
@@ -101,15 +105,17 @@ d3.queue()
             });
         
         // Create Sturgeon List
-        var sturgeonList = detailData.map(a => a.Sturgeon_ID);
+        var sturgeonList = detailData.map((d) => [d.Sturgeon_ID, d.Sturgeon_Name]);
         
+        console.log(sturgeonList);
+
         d3.select("#selectSturgeon")
             .selectAll('option')
             .data(sturgeonList)
             .enter()
             .append('option')
-            .text(function (d) {return d; })
-            .attr("value", function (d) { return d; });
+            .text(function (d) {return d[1]; })
+            .attr("value", function (d) { return d[0]; });
 
         d3.select("#selectSturgeon").on("change", function(d) {
             var selectedOption = d3.select(this).property("value")
@@ -240,7 +246,7 @@ d3.queue()
                     .delay(cumulativeDelay)
                     .duration(1000)
                     .attr("r", d=> radiusScale(d.Sturgeon_Count))
-                    .attr("fill", "#BB9F06") 
+                    //.attr("fill", "#BB9F06") 
                     .attr("stroke", "#BB9F06")
                     .attr("stroke-width", 2)
                     .style("opacity", 0.7)
@@ -275,7 +281,7 @@ d3.queue()
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M8 5v14l11-7z"/>
                         </svg>
-                        Play Animation
+                        Play ${detailID.Sturgeon_Name}'s Timelapse
                     </button>
                 </div>
             `);
@@ -294,7 +300,7 @@ d3.queue()
             // Function for ring burst appearance
             const radiusCount = d.Sturgeon_Count;
             const ringIndexRadius = Math.floor(radiusCount/10);
-            const radiusRadius = 40 + (ringIndexRadius * 25) + 12;
+            const radiusRadius = 40 + (ringIndexRadius * 25) + 20;
             //const angle = (posOnRing / 10) * (2 * Math.PI);
             //return hubX + radius * Math.cos(angle);
 
@@ -342,8 +348,8 @@ d3.queue()
                 .attr("cy", hubY)
                 .attr("r", 0)
                 .attr("fill", d => sexColorScale(d.Sex))
-                .attr("stroke", d => sexColorScale(d.Sex))
-                .style("stroke-width", 3)
+                .attr("stroke", d => sexStrokeColorScale(d.Sex))
+                .style("stroke-width", 1)
                 .style("fill-opacity", 0.90)
                 .on("mouseover", function(d) {
                     tooltip.style("opacity", 1)
@@ -376,7 +382,7 @@ d3.queue()
                     const angle = (posOnRing / 10) * (2 * Math.PI);
                     return hubY + radius * Math.sin(angle);
                 })
-                .attr("r", 8);
+                .attr("r", 10);
 
 
 
@@ -400,7 +406,7 @@ d3.queue()
                 .raise()
                 .transition().duration(500)
                 .style("opacity", 1)
-                .attr("r", 12);
+                .attr("r", 15);
         };
 
         function drawHubs() {
