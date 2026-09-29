@@ -283,6 +283,10 @@ d3.queue()
                         </svg>
                         Play ${detailID.Sturgeon_Name}'s Timelapse
                     </button>
+                    <br>
+                    <img 
+                        class = "fit-picture"
+                        src="../../images/sturgeon14.jpg"/>
                 </div>
             `);
 

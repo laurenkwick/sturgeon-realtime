@@ -59,7 +59,6 @@ card-content {
     border: 1px solid rgba(220, 220, 220, 0.8);
     margin: 20px;
     padding: 20px;
-    gap: 16px;
     background-color: #fefefd;
     display: flex;
     flex-direction: column;
@@ -91,6 +90,15 @@ card-content {
     line-height: 1.4;
     box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
     z-index: 30;
+}
+
+.fit-picture {
+    box-sizing: border-box;
+    margin-top: 16px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #405c61;
+    max-width: 100%;
 }
 
 #play-button {
