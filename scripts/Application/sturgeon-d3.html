@@ -18,7 +18,44 @@
 
 		<content>
 
+			<dialog id="my-dialog" popover>
+				<h2>Guide</h2>
+				<p>This interactive mapping application uses real data collected in the James River of Virginia. It is updated weekly and highlights the movement of
+					Atlantic Sturgeon (Acipenser oxyrinchus) for the previous week. This guide demonstrates how to use and interpret the map.</p>
+				<div class="popover-row">
+					<p>The yellow circles displayed along the river correspond to receivers which detect sturgeon as they swim by. Larger circles reflect receivers that detected more sturgeon in a given week. 
+					Hovering over the circles will display a pop-up containing the Receiver Name and number of sturgeon detected that week.</p>
+
+					<div class="svg-container">
+						<svg width="54" height="54" style="display: block; margin: 20px;">
+							<circle cx="27" cy="27" r="25" fill="#BB9F06" stroke="#BB9F06" stroke-width="2" opacity="0.7" />
+					</svg>
+					</div>
+				</div>
+				<p>Click a yellow circle to see the individual sturgeon that were detected at your selected receiver. Individual sturgeon are color coded by their sex in 
+					<span style="color: #58211f; font-weight: bold;">red</span> for female, <span style="color: #516a6e; font-weight: bold;">blue</span> for male, and
+					<span style="color: #1f1e1e; font-weight: bold;">gray</span> for unknown. Hover over these circles to view each sturgeon's name. </p>
+				<svg width="54" height="25" style="display: block; margin: 20px;">
+					<circle cx="9" cy="9" r="8" fill="#b0413e" stroke="#58211f" stroke-width="1" opacity="0.9" />
+				</svg>
+				<svg width="54" height="25" style="display: block; margin: 20px;">
+					<circle cx="27" cy="9" r="8" fill="#88B5BD" stroke="#516a6e" stroke-width="1" opacity="0.9" />
+				</svg>
+				<svg width="54" height="25" style="display: block; margin: 20px;">
+					<circle cx="45" cy="9" r="8" fill="#5F5F5F" stroke="#1f1e1e" stroke-width="1" opacity="0.9" />
+				</svg>
+				<p>Clicking on an individual sturgeon will update the information panel with facts about the selected sturgeon including name, sex, capture date, capture 
+					location, spawning season, and fork length. An image of the selected sturgeon will also appear. Alternatively, you can choose from a list of sturgeon detected 
+				    for the given week by using the dropdown menu instead of the map interface.</p>
+				<p>Once you have selected a sturgeon, you can click on the yellow timelapse button to play an animation of that sturgeon's movement during the week. A red circle will 
+					animate at each receiver that detected the selected sturgeon as the time label increments through each day.</p>
+				<h3>Now it's your turn to explore!</h3>
+
+				<button id="close-button" popovertarget="my-dialog" popovertargetaction="hide">Return to Application</button>
+			</dialog>
+
 			<map-content>
+				<button id="info-button" popovertarget="my-dialog">?</button>
 				<div id="map-container"></div>
 				<div class="the-dateline singular-mode">
 					<span class="dateline-label">Sturgeon Movement on </span>
