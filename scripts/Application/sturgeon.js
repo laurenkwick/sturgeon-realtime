@@ -66,11 +66,19 @@ var movementConverter = function(d) {
     }
 }
 
+var imageConverter = function(d) {
+    return {
+        Sturgeon_ID: d.Sturgeon_ID,
+        Image_File: d.Sturgeon_Image
+    }
+}
+
 d3.queue()
     .defer(d3.csv, "../../data/Hub_Summary.csv", hubConverter)
     .defer(d3.csv, "../../data/Sturgeon_Details.csv", detailConverter)
     .defer(d3.csv, "../../data/Sturgeon_Movement.csv", movementConverter)
-    .await(function(error, hubData, detailData, movementData) {
+    .defer(d3.csv, "../../data/Sturgeon_Image_Mapping.csv", imageConverter)
+    .await(function(error, hubData, detailData, movementData, imageData) {
 
         if (error) throw error;
 
@@ -107,8 +115,6 @@ d3.queue()
         // Create Sturgeon List
         var sturgeonList = detailData.map((d) => [d.Sturgeon_ID, d.Sturgeon_Name]);
         
-        console.log(sturgeonList);
-
         d3.select("#selectSturgeon")
             .selectAll('option')
             .data(sturgeonList)
@@ -263,6 +269,9 @@ d3.queue()
         function updateSidebar(detailID) {
             const cardContent = d3.select("#card-content");
 
+            const imageFile = imageData.filter(obs => obs.Sturgeon_ID === detailID.Sturgeon_ID)[0];
+            //const imageFileLoc = imageFile.Image_File;
+
             cardContent.html(`
                 <div id="card-content">
                     <h2> Sturgeon Details</h2>
@@ -286,7 +295,7 @@ d3.queue()
                     <br>
                     <img 
                         class = "fit-picture"
-                        src="../../images/sturgeon14.jpg"/>
+                        src="../../images/${imageFile.Image_File}"/>
                 </div>
             `);
 
