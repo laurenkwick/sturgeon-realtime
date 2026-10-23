@@ -1,3 +1,5 @@
+
+
 body {
     font-family: "Merriweather", serif;
     color: #5F5F5F;
@@ -8,14 +10,18 @@ h1 {
     text-align: center;
     color: #fefefd;
     margin: 0;
-    font-size: 50px;
+    font-size: 35px;
 }
 
 h2 {
-    margin: 20px;
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: normal;
+    text-align: center;
+}
+
+h3 {
+    margin: 20px;
     text-align: center;
 }
 
@@ -31,23 +37,39 @@ content {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    max-height: 99vh;
+    overflow: hidden;
 }
 
 map-content {
     /* Grows to fill available space, shrinks if needed, base width 0 */
     flex: 5 4 0px; 
-    min-width: 700px; /* Optional: prevents map-content from becoming too narrow before wrap */
+    min-width: 800px; /* Optional: prevents map-content from becoming too narrow before wrap */
+    min-height: 450px;
     position: relative;
     box-sizing: border-box;
-    margin: 20px;
-    padding: 15px;
-    gap: 16px;
+    margin: 10px;
+    padding: 8px;
+    gap: 8px;
     backdrop-filter: blur(8px);
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(220, 220, 220, 0.8);
-    align-self: flex-start;
     background-color: #fefefd;
+    overflow:hidden;
+
+    max-height: calc(99vh - 20px); /* Accounts for margin */
+    display: flex;
+    flex-direction: column;
+}
+#map-container {
+    flex: 1;
+    min-height: 0; /* Critical for flex child scrolling/scaling */
+    width: 100%;
+}
+
+#map-container svg {
+  display: block;
 }
 
 card-content {
@@ -57,15 +79,19 @@ card-content {
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(220, 220, 220, 0.8);
-    margin: 20px;
-    padding: 20px;
-    gap: 16px;
+    margin: 10px;
+    padding: 8px;
     background-color: #fefefd;
     display: flex;
     flex-direction: column;
     align-items: center;
     box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 0;
+    max-height: 90vh;
 }
+
 
 /* Dropdown styling inside card */
 #selectSturgeon {
@@ -91,6 +117,132 @@ card-content {
     line-height: 1.4;
     box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
     z-index: 30;
+}
+
+.fit-picture {
+    box-sizing: border-box;
+    margin-top: 16px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #BB9F06;
+    max-width: 100%;
+}
+
+#info-button {
+    align-items: center;
+
+    gap: 8px;
+    margin-top: 16px;
+    padding: 8px 14px;
+
+    position: absolute;
+    top: 2%;  /* position the top  edge of the element at the middle of the parent */
+    left: 3%; /* position the left edge of the element at the middle of the parent */
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 900;
+    color: #5F5F5F;
+    
+    
+    border: 3px solid #5F5F5F;
+    background-color: #cccccc91;
+
+    border-radius: 30px;
+    cursor: pointer;
+
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#info-button:hover {
+    background: #e0e0e091;
+    transform: translateY(-1px);
+}
+
+#info-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px #f3f3f391;
+}
+
+#info-button:focus-visible {
+    outline: 2px solid #f3f3f3;
+    outline-offset: 2px;
+}
+
+#close-button {
+    text-align: center; 
+
+    display: block; 
+    margin: auto;
+
+    gap: 8px;
+    margin-top: 16px;
+    padding: 8px 14px;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: #ffffff;
+    
+    
+    border: none;
+    background: linear-gradient(135deg, #BB9F06 0%, #998305 100%);
+
+    border-radius: 30px;
+    cursor: pointer;
+
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);   
+}
+
+#close-button:hover {
+    background: linear-gradient(135deg, #e0c007 0%, #BB9F06 100%);
+    transform: translateY(-1px);
+}
+
+#close-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px #f3f3f391;
+}
+
+#close-button:focus-visible {
+    outline: 2px solid #f3f3f3;
+    outline-offset: 2px;
+}
+
+::backdrop {
+  background-image: linear-gradient(
+    45deg,
+    #ccc,
+    #c0c0c0
+  );
+  opacity: 0.75;
+}
+
+[popover] {
+    padding: 20px;
+    border: 3px solid #5F5F5F;
+    background-color: #f3f3f3;
+    max-width: 80%;
+    max-height: 80%;
+
+    overflow-y:auto;
+
+    border-radius: 30px;
+}
+
+.popover-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.svg-container {
+    flex: 0 1 20%;
+    display: flex;
+    justify-content: center;
+    align-items:center;
 }
 
 #play-button {
@@ -190,3 +342,4 @@ circle:hover {
     visibility: visible;
     opacity: 1;
 }
+

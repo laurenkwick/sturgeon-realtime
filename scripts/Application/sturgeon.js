@@ -16,8 +16,8 @@ const imageBounds = [
 const svg = d3.select("#map-container")
     .append("svg")
     .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("width", "100%")
-    .attr("height", "auto");
+    //.attr("width", "100%")
+    //.attr("height", "100%");
 
 const projection = d3.geoMercator()
     .fitExtent([[0, 0], [width, height]], {
@@ -66,11 +66,19 @@ var movementConverter = function(d) {
     }
 }
 
+var imageConverter = function(d) {
+    return {
+        Sturgeon_ID: d.Sturgeon_ID,
+        Image_File: d.Sturgeon_Image
+    }
+}
+
 d3.queue()
     .defer(d3.csv, "../../data/Hub_Summary.csv", hubConverter)
     .defer(d3.csv, "../../data/Sturgeon_Details.csv", detailConverter)
     .defer(d3.csv, "../../data/Sturgeon_Movement.csv", movementConverter)
-    .await(function(error, hubData, detailData, movementData) {
+    .defer(d3.csv, "../../data/Sturgeon_Image_Mapping.csv", imageConverter)
+    .await(function(error, hubData, detailData, movementData, imageData) {
 
         if (error) throw error;
 
@@ -93,7 +101,6 @@ d3.queue()
                     .transition()
                     .duration(500)
                     .attr("r", d=> radiusScale(d.Sturgeon_Count))
-                    //.attr("fill", "#BB9F06") 
                     .attr("stroke", "#BB9F06")
                     .attr("stroke-width", 2)
                     .style("opacity", 0.7)
@@ -107,8 +114,6 @@ d3.queue()
         // Create Sturgeon List
         var sturgeonList = detailData.map((d) => [d.Sturgeon_ID, d.Sturgeon_Name]);
         
-        console.log(sturgeonList);
-
         d3.select("#selectSturgeon")
             .selectAll('option')
             .data(sturgeonList)
@@ -263,6 +268,9 @@ d3.queue()
         function updateSidebar(detailID) {
             const cardContent = d3.select("#card-content");
 
+            const imageFile = imageData.filter(obs => obs.Sturgeon_ID === detailID.Sturgeon_ID)[0];
+            //const imageFileLoc = imageFile.Image_File;
+
             cardContent.html(`
                 <div id="card-content">
                     <h2> Sturgeon Details</h2>
@@ -283,6 +291,10 @@ d3.queue()
                         </svg>
                         Play ${detailID.Sturgeon_Name}'s Timelapse
                     </button>
+                    <br>
+                    <img 
+                        class = "fit-picture"
+                        src="../../images/${imageFile.Image_File}"/>
                 </div>
             `);
 
