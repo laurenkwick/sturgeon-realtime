@@ -16,8 +16,8 @@ const imageBounds = [
 const svg = d3.select("#map-container")
     .append("svg")
     .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("width", "100%")
-    .attr("height", "auto");
+    //.attr("width", "100%")
+    //.attr("height", "100%");
 
 const projection = d3.geoMercator()
     .fitExtent([[0, 0], [width, height]], {

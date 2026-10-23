@@ -1,3 +1,5 @@
+
+
 body {
     font-family: "Merriweather", serif;
     color: #5F5F5F;
@@ -36,12 +38,14 @@ content {
     flex-direction: row;
     flex-wrap: wrap;
     max-height: 99vh;
+    overflow: hidden;
 }
 
 map-content {
     /* Grows to fill available space, shrinks if needed, base width 0 */
     flex: 5 4 0px; 
     min-width: 800px; /* Optional: prevents map-content from becoming too narrow before wrap */
+    min-height: 450px;
     position: relative;
     box-sizing: border-box;
     margin: 10px;
@@ -51,8 +55,17 @@ map-content {
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(220, 220, 220, 0.8);
-    align-self: flex-start;
     background-color: #fefefd;
+    overflow:hidden;
+
+    max-height: calc(99vh - 20px); /* Accounts for margin */
+    display: flex;
+    flex-direction: column;
+}
+#map-container {
+    flex: 1;
+    min-height: 0; /* Critical for flex child scrolling/scaling */
+    width: 100%;
 }
 
 #map-container svg {
@@ -61,7 +74,7 @@ map-content {
 
 card-content {
     /* Grows (1), shrinks (1), but starts at a base width of 250px */
-    flex: 1 2 150px;
+    flex: 1 1 150px;
     backdrop-filter: blur(8px);
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
